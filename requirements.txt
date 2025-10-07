@@ -2,3 +2,4 @@ streamlit
 reportlab
 bcrypt
 streamlit-autorefresh
+psycopg2-binary
