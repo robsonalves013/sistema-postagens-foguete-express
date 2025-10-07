@@ -1,21 +1,23 @@
 import streamlit as st
 import db
+from datetime import datetime
 
-# 🧱 Garante que as tabelas existam no banco
+# Inicializa tabelas
 db.criar_tabelas()
 
-# 🎨 Configurações de página
+# Configurações da página
 st.set_page_config(
     page_title="Sistema de Postagens - Foguete Express 🚀",
     page_icon="🚀",
     layout="centered"
 )
 
-# 🏷️ Cabeçalho
+# Cabeçalho
 st.title("📬 Sistema de Postagens - Foguete Express 🚀")
 st.markdown("### Crie, visualize e gerencie suas postagens com facilidade!")
+st.divider()
 
-# ✏️ Formulário de criação de postagens
+# Formulário de nova postagem
 with st.form("nova_postagem"):
     st.subheader("📝 Nova Postagem")
     titulo = st.text_input("Título da postagem:")
@@ -30,21 +32,21 @@ with st.form("nova_postagem"):
         else:
             st.warning("⚠️ Preencha todos os campos antes de publicar.")
 
-# 📋 Listagem de postagens
-st.markdown("---")
-st.subheader("📰 Postagens Recentes")
+st.divider()
 
+# Lista de postagens
+st.subheader("📰 Postagens Recentes")
 postagens = db.listar_postagens()
 if postagens:
     for p in postagens:
         st.markdown(f"### {p['titulo']}")
         st.markdown(p['conteudo'])
-        st.caption(f"🕒 Publicado em {p['criado_em']}")
+        st.caption(f"🕒 Publicado em {p['criado_em'].strftime('%d/%m/%Y %H:%M')}")
         st.markdown("---")
 else:
     st.info("🚀 Nenhuma postagem encontrada ainda. Crie a primeira acima!")
 
-# 🧩 Rodapé
+# Rodapé
 st.markdown(
     """
     <div style="text-align:center; margin-top: 40px; font-size: 0.9em; color: gray;">
@@ -53,3 +55,4 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+st.markdown("© 2024 RobTech Service. Todos os direitos reservados.")

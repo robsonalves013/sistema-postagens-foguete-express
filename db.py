@@ -2,15 +2,24 @@ import psycopg
 from psycopg.rows import dict_row
 import os
 
-# ✅ Lê a URL do banco do ambiente (Render → DATABASE_URL)
+# Lê a variável de ambiente do Render
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# 🔒 Configuração da conexão (Render exige SSL)
-def conectar():
-    return psycopg.connect(DATABASE_URL, sslmode="require", row_factory=dict_row)
+if not DATABASE_URL:
+    raise ValueError("❌ A variável de ambiente DATABASE_URL não foi encontrada. Configure-a no Render!")
 
-# 🧱 Cria a tabela de postagens, se não existir
+def conectar():
+    """Conecta ao PostgreSQL usando a URL completa"""
+    # Adiciona sslmode=require se não estiver presente na URL
+    if "sslmode=" not in DATABASE_URL:
+        dsn = DATABASE_URL + "?sslmode=require"
+    else:
+        dsn = DATABASE_URL
+
+    return psycopg.connect(dsn, row_factory=dict_row)
+
 def criar_tabelas():
+    """Cria a tabela de postagens se não existir"""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -21,9 +30,8 @@ def criar_tabelas():
                     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
-            conn.commit()
+        conn.commit()
 
-# ➕ Adiciona uma nova postagem
 def adicionar_postagem(titulo, conteudo):
     with conectar() as conn:
         with conn.cursor() as cur:
@@ -31,9 +39,8 @@ def adicionar_postagem(titulo, conteudo):
                 "INSERT INTO postagens (titulo, conteudo) VALUES (%s, %s);",
                 (titulo, conteudo)
             )
-            conn.commit()
+        conn.commit()
 
-# 📜 Retorna todas as postagens (mais recentes primeiro)
 def listar_postagens():
     with conectar() as conn:
         with conn.cursor() as cur:
