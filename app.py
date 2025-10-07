@@ -6,6 +6,8 @@ from streamlit_autorefresh import st_autorefresh
 
 # Inicializa banco
 db.criar_tabelas()
+
+# Configuração da página
 st.set_page_config(page_title="Sistema de Postagens", layout="centered")
 
 # ------------------- Sessão -------------------
@@ -25,7 +27,7 @@ if not st.session_state["logado"]:
         if user:
             st.session_state["logado"] = True
             st.session_state["usuario"] = user
-            st.success("Login realizado com sucesso!")
+            st.experimental_rerun()  # Atualiza a tela para a tela principal
         else:
             st.error("Usuário ou senha incorretos.")
 
@@ -34,21 +36,21 @@ else:
     user = st.session_state["usuario"]
     admin = bool(user['is_admin'])
 
+    # Sidebar
     st.sidebar.title("Menu")
     opcoes = ["Cadastrar Postagem", "Listar Postagens", "Fechamento Diário"]
     if admin:
-        opcoes.append("Gerenciar Usuários")
-        opcoes.append("Relatório Mensal")
+        opcoes += ["Gerenciar Usuários", "Relatório Mensal"]
 
     opcao = st.sidebar.radio("Selecione uma opção", opcoes)
     st.sidebar.markdown("---")
     st.sidebar.write(f"👤 {user['nome']} ({'Admin' if admin else 'Usuário'})")
-    
-    # Logout automático
+
+    # Logout
     if st.sidebar.button("Sair"):
         st.session_state["logado"] = False
         st.session_state["usuario"] = None
-        st.success("Logout realizado com sucesso!")
+        st.experimental_rerun()
 
     # -------- CADASTRAR POSTAGEM --------
     if opcao == "Cadastrar Postagem":
@@ -65,14 +67,16 @@ else:
         data_pagamento = st.date_input("Data de Pagamento (opcional)").strftime("%d/%m/%Y")
 
         if st.button("Salvar"):
-            dados = (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
+            dados = (posto, remetente, codigo, tipo, valor, forma_pagamento,
+                     status_pagamento, funcionario, data_postagem, data_pagamento)
             db.adicionar_postagem(dados)
             st.success("Postagem cadastrada com sucesso!")
+            st.experimental_rerun()
 
     # -------- LISTAR POSTAGENS COM AUTO-REFRESH --------
     elif opcao == "Listar Postagens":
         st.header("📋 Lista de Postagens")
-        st_autorefresh(interval=5000, key="refresher")  # atualiza a lista a cada 5 segundos
+        st_autorefresh(interval=5000, key="refresher")  # atualiza a lista a cada 5s
 
         postagens = db.listar_postagens()
         if postagens:
@@ -89,6 +93,7 @@ else:
                     st.write(f"Data Postagem: {p['data_postagem']}")
                     st.write(f"Data Pagamento: {p['data_pagamento']}")
 
+                    # Atualizar pagamento
                     if p['status_pagamento'] == "Pendente":
                         st.markdown("**Atualizar Pagamento**")
                         novo_status = st.selectbox("Status", ["Pendente", "Pago"], key=f"status_{p['id']}")
@@ -96,6 +101,7 @@ else:
                         if st.button("Salvar Alterações", key=f"btn_{p['id']}"):
                             db.atualizar_pagamento(p['id'], novo_status, nova_data.strftime("%d/%m/%Y"))
                             st.success("Pagamento atualizado com sucesso!")
+                            st.experimental_rerun()
 
         else:
             st.info("Nenhuma postagem cadastrada.")
@@ -110,7 +116,7 @@ else:
                 st.download_button("Baixar PDF", f, file_name="fechamento.pdf")
         st.info("O relatório incluirá todas as postagens do dia.")
 
-    # -------- GERENCIAR USUÁRIOS --------
+    # -------- GERENCIAR USUÁRIOS (Admin) --------
     elif opcao == "Gerenciar Usuários" and admin:
         st.header("👥 Gerenciar Usuários")
         st.subheader("Cadastrar Novo Usuário")
@@ -123,6 +129,7 @@ else:
             try:
                 db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
                 st.success("Usuário criado com sucesso!")
+                st.experimental_rerun()
             except Exception as e:
                 st.error(f"Erro ao criar usuário: {e}")
 
@@ -134,6 +141,7 @@ else:
         if st.button("Resetar Senha"):
             db.resetar_senha(usuario_reset, nova_senha_reset)
             st.success(f"Senha do usuário '{usuario_reset}' foi resetada com sucesso!")
+            st.experimental_rerun()
 
         st.markdown("---")
         st.subheader("Usuários Cadastrados")
@@ -141,7 +149,7 @@ else:
             tipo = "Admin" if u['is_admin'] else "Usuário"
             st.write(f"👤 {u['nome']} ({u['usuario']}) - {tipo}")
 
-    # -------- RELATÓRIO MENSAL --------
+    # -------- RELATÓRIO MENSAL (Admin) --------
     elif opcao == "Relatório Mensal" and admin:
         st.header("📊 Relatório Mensal")
         col1, col2 = st.columns(2)
@@ -167,5 +175,6 @@ else:
             else:
                 st.warning("Nenhuma postagem encontrada para o filtro selecionado.")
 
-    st.markdown("---")
-    st.caption("Sistema desenvolvido por RobTechService © 2025")
+# Footer
+st.markdown("---")
+st.caption("Sistema desenvolvido por RobTechService © 2025")

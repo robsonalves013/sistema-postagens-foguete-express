@@ -4,7 +4,6 @@ import bcrypt
 from datetime import datetime
 import os
 
-# Configurações do banco PostgreSQL via variáveis de ambiente
 DB_PARAMS = {
     "host": os.environ.get("DB_HOST"),
     "dbname": os.environ.get("DB_NAME"),
@@ -19,7 +18,6 @@ def conectar():
 def criar_tabelas():
     conn = conectar()
     c = conn.cursor()
-
     # Usuários
     c.execute("""
     CREATE TABLE IF NOT EXISTS usuarios (
@@ -30,7 +28,6 @@ def criar_tabelas():
         is_admin INTEGER DEFAULT 0
     )
     """)
-
     # Postagens
     c.execute("""
     CREATE TABLE IF NOT EXISTS postagens (
@@ -47,7 +44,6 @@ def criar_tabelas():
         data_pagamento TEXT
     )
     """)
-
     # Usuário admin padrão
     c.execute("SELECT * FROM usuarios WHERE usuario='admin'")
     if not c.fetchone():
@@ -57,7 +53,6 @@ def criar_tabelas():
             ("Administrador", "admin", senha_hash, 1)
         )
         print("Usuário admin criado com sucesso: admin / 1234")
-
     conn.commit()
     conn.close()
 
@@ -111,7 +106,7 @@ def autenticar(usuario, senha):
     user = c.fetchone()
     conn.close()
     if user:
-        senha_hash = bytes(user['senha'])  # Converte memoryview para bytes
+        senha_hash = bytes(user['senha'])
         if bcrypt.checkpw(senha.encode('utf-8'), senha_hash):
             return user
     return None
