@@ -13,8 +13,6 @@ if "logado" not in st.session_state:
     st.session_state["logado"] = False
 if "usuario" not in st.session_state:
     st.session_state["usuario"] = None
-if "recarregar" not in st.session_state:
-    st.session_state["recarregar"] = False  # controla atualização da tela
 
 # ----------------- Tela de Login -----------------
 if not st.session_state["logado"]:
@@ -27,7 +25,6 @@ if not st.session_state["logado"]:
         if user:
             st.session_state["logado"] = True
             st.session_state["usuario"] = user
-            st.session_state["recarregar"] = not st.session_state["recarregar"]
             st.success("Login realizado com sucesso!")
         else:
             st.error("Usuário ou senha incorretos.")
@@ -35,7 +32,7 @@ if not st.session_state["logado"]:
 # ----------------- Tela Principal -----------------
 else:
     user = st.session_state["usuario"]
-    admin = bool(user[4])
+    admin = bool(user['is_admin'])
 
     st.sidebar.title("Menu")
     opcoes = ["Cadastrar Postagem", "Listar Postagens", "Fechamento Diário"]
@@ -45,13 +42,12 @@ else:
 
     opcao = st.sidebar.radio("Selecione uma opção", opcoes)
     st.sidebar.markdown("---")
-    st.sidebar.write(f"👤 {user[1]} ({'Admin' if admin else 'Usuário'})")
+    st.sidebar.write(f"👤 {user['nome']} ({'Admin' if admin else 'Usuário'})")
     
     # Logout automático
     if st.sidebar.button("Sair"):
         st.session_state["logado"] = False
         st.session_state["usuario"] = None
-        st.session_state["recarregar"] = not st.session_state["recarregar"]
         st.success("Logout realizado com sucesso!")
 
     # -------- CADASTRAR POSTAGEM --------
@@ -81,24 +77,24 @@ else:
         postagens = db.listar_postagens()
         if postagens:
             for p in postagens:
-                with st.expander(f"📦 {p[3]} | {p[1]} | {p[2]}"):
-                    st.write(f"Posto: {p[1]}")
-                    st.write(f"Remetente: {p[2]}")
-                    st.write(f"Código: {p[3]}")
-                    st.write(f"Tipo: {p[4]}")
-                    st.write(f"Valor: R$ {p[5]:.2f}")
-                    st.write(f"Forma de Pagamento: {p[6]}")
-                    st.write(f"Status: {p[7]}")
-                    st.write(f"Funcionário: {p[8]}")
-                    st.write(f"Data Postagem: {p[9]}")
-                    st.write(f"Data Pagamento: {p[10]}")
+                with st.expander(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}"):
+                    st.write(f"Posto: {p['posto']}")
+                    st.write(f"Remetente: {p['remetente']}")
+                    st.write(f"Código: {p['codigo']}")
+                    st.write(f"Tipo: {p['tipo']}")
+                    st.write(f"Valor: R$ {p['valor']:.2f}")
+                    st.write(f"Forma de Pagamento: {p['forma_pagamento']}")
+                    st.write(f"Status: {p['status_pagamento']}")
+                    st.write(f"Funcionário: {p['funcionario']}")
+                    st.write(f"Data Postagem: {p['data_postagem']}")
+                    st.write(f"Data Pagamento: {p['data_pagamento']}")
 
-                    if p[7] == "Pendente":
+                    if p['status_pagamento'] == "Pendente":
                         st.markdown("**Atualizar Pagamento**")
-                        novo_status = st.selectbox("Status", ["Pendente", "Pago"], key=f"status_{p[0]}")
-                        nova_data = st.date_input("Data Pagamento", value=datetime.now(), key=f"data_{p[0]}")
-                        if st.button("Salvar Alterações", key=f"btn_{p[0]}"):
-                            db.atualizar_pagamento(p[0], novo_status, nova_data.strftime("%d/%m/%Y"))
+                        novo_status = st.selectbox("Status", ["Pendente", "Pago"], key=f"status_{p['id']}")
+                        nova_data = st.date_input("Data Pagamento", value=datetime.now(), key=f"data_{p['id']}")
+                        if st.button("Salvar Alterações", key=f"btn_{p['id']}"):
+                            db.atualizar_pagamento(p['id'], novo_status, nova_data.strftime("%d/%m/%Y"))
                             st.success("Pagamento atualizado com sucesso!")
 
         else:
@@ -133,7 +129,7 @@ else:
         st.markdown("---")
         st.subheader("Resetar Senha de Usuário")
         usuarios = db.listar_usuarios()
-        usuario_reset = st.selectbox("Selecione o usuário", [u[2] for u in usuarios])
+        usuario_reset = st.selectbox("Selecione o usuário", [u['usuario'] for u in usuarios])
         nova_senha_reset = st.text_input("Nova senha", type="password", key="reset_senha")
         if st.button("Resetar Senha"):
             db.resetar_senha(usuario_reset, nova_senha_reset)
@@ -142,8 +138,8 @@ else:
         st.markdown("---")
         st.subheader("Usuários Cadastrados")
         for u in usuarios:
-            tipo = "Admin" if u[3] else "Usuário"
-            st.write(f"👤 {u[1]} ({u[2]}) - {tipo}")
+            tipo = "Admin" if u['is_admin'] else "Usuário"
+            st.write(f"👤 {u['nome']} ({u['usuario']}) - {tipo}")
 
     # -------- RELATÓRIO MENSAL --------
     elif opcao == "Relatório Mensal" and admin:

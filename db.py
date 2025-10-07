@@ -1,9 +1,19 @@
-import sqlite3
-from datetime import datetime
+import psycopg2
+from psycopg2.extras import RealDictCursor
 import bcrypt
+from datetime import datetime
+
+# Configurações do banco PostgreSQL no Render
+DB_PARAMS = {
+    "host": "SEU_HOST_DO_RENDER",
+    "dbname": "SEU_DB",
+    "user": "SEU_USUARIO",
+    "password": "SUA_SENHA",
+    "port": 5432
+}
 
 def conectar():
-    return sqlite3.connect("postagens.db")
+    return psycopg2.connect(**DB_PARAMS, cursor_factory=RealDictCursor)
 
 def criar_tabelas():
     conn = conectar()
@@ -12,10 +22,10 @@ def criar_tabelas():
     # Usuários
     c.execute("""
     CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         nome TEXT,
         usuario TEXT UNIQUE,
-        senha BLOB,
+        senha BYTEA,
         is_admin INTEGER DEFAULT 0
     )
     """)
@@ -23,7 +33,7 @@ def criar_tabelas():
     # Postagens
     c.execute("""
     CREATE TABLE IF NOT EXISTS postagens (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id SERIAL PRIMARY KEY,
         posto TEXT,
         remetente TEXT,
         codigo TEXT,
@@ -41,8 +51,10 @@ def criar_tabelas():
     c.execute("SELECT * FROM usuarios WHERE usuario='admin'")
     if not c.fetchone():
         senha_hash = bcrypt.hashpw("1234".encode('utf-8'), bcrypt.gensalt())
-        c.execute("INSERT INTO usuarios (nome, usuario, senha, is_admin) VALUES (?, ?, ?, ?)",
-                  ("Administrador", "admin", senha_hash, 1))
+        c.execute(
+            "INSERT INTO usuarios (nome, usuario, senha, is_admin) VALUES (%s, %s, %s, %s)",
+            ("Administrador", "admin", senha_hash, 1)
+        )
         print("Usuário admin criado com sucesso: admin / 1234")
 
     conn.commit()
@@ -53,7 +65,7 @@ def adicionar_postagem(dados):
     c = conn.cursor()
     c.execute("""
         INSERT INTO postagens (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """, dados)
     conn.commit()
     conn.close()
@@ -78,7 +90,7 @@ def criar_usuario(nome, usuario, senha, is_admin=0):
     conn = conectar()
     c = conn.cursor()
     senha_hash = bcrypt.hashpw(senha.encode('utf-8'), bcrypt.gensalt())
-    c.execute("INSERT INTO usuarios (nome, usuario, senha, is_admin) VALUES (?, ?, ?, ?)",
+    c.execute("INSERT INTO usuarios (nome, usuario, senha, is_admin) VALUES (%s, %s, %s, %s)",
               (nome, usuario, senha_hash, is_admin))
     conn.commit()
     conn.close()
@@ -87,17 +99,17 @@ def resetar_senha(usuario, nova_senha):
     conn = conectar()
     c = conn.cursor()
     senha_hash = bcrypt.hashpw(nova_senha.encode('utf-8'), bcrypt.gensalt())
-    c.execute("UPDATE usuarios SET senha=? WHERE usuario=?", (senha_hash, usuario))
+    c.execute("UPDATE usuarios SET senha=%s WHERE usuario=%s", (senha_hash, usuario))
     conn.commit()
     conn.close()
 
 def autenticar(usuario, senha):
     conn = conectar()
     c = conn.cursor()
-    c.execute("SELECT * FROM usuarios WHERE usuario=?", (usuario,))
+    c.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
     user = c.fetchone()
     conn.close()
-    if user and bcrypt.checkpw(senha.encode('utf-8'), user[3]):
+    if user and bcrypt.checkpw(senha.encode('utf-8'), user['senha']):
         return user
     return None
 
@@ -109,11 +121,11 @@ def listar_postagens_mensal(mes, ano, posto=None, tipo=None, forma_pagamento=Non
     filtradas = []
     for p in todas:
         try:
-            data = datetime.strptime(p[9], "%d/%m/%Y")
+            data = datetime.strptime(p['data_postagem'], "%d/%m/%Y")
         except:
             continue
         if data.month == mes and data.year == ano:
-            if (not posto or p[1] == posto) and (not tipo or p[4] == tipo) and (not forma_pagamento or p[6] == forma_pagamento):
+            if (not posto or p['posto'] == posto) and (not tipo or p['tipo'] == tipo) and (not forma_pagamento or p['forma_pagamento'] == forma_pagamento):
                 filtradas.append(p)
     conn.close()
     return filtradas
@@ -121,7 +133,7 @@ def listar_postagens_mensal(mes, ano, posto=None, tipo=None, forma_pagamento=Non
 def atualizar_pagamento(postagem_id, status, data_pagamento):
     conn = conectar()
     c = conn.cursor()
-    c.execute("UPDATE postagens SET status_pagamento = ?, data_pagamento = ? WHERE id = ?",
+    c.execute("UPDATE postagens SET status_pagamento=%s, data_pagamento=%s WHERE id=%s",
               (status, data_pagamento, postagem_id))
     conn.commit()
     conn.close()
