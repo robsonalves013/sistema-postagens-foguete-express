@@ -1,14 +1,17 @@
 import psycopg
 from psycopg.rows import dict_row
 import bcrypt
+import os
 
 # Configuração do banco de dados (Render)
 DB_PARAMS = {
-    "host": "SEU_HOST_DO_RENDER",
-    "dbname": "SEU_DB",
-    "user": "SEU_USUARIO",
-    "password": "SUA_SENHA"
+    "host": os.environ.get("DB_HOST"),
+    "dbname": os.environ.get("DB_NAME"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASS"),
+    "port": int(os.environ.get("DB_PORT", 5432))
 }
+
 
 def conectar():
     """Conexão com PostgreSQL usando psycopg 3"""
