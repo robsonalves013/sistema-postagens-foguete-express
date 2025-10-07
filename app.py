@@ -7,40 +7,31 @@ from utils import gerar_pdf, gerar_relatorio_mensal
 db.criar_tabelas()
 st.set_page_config(page_title="Sistema de Postagens", layout="centered")
 
-# ---------------- LOGIN ----------------
+# ------------------- Sessão -------------------
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
 if "usuario" not in st.session_state:
     st.session_state["usuario"] = None
-if "login_ok" not in st.session_state:
-    st.session_state["login_ok"] = False  # controla mensagem de sucesso
+if "recarregar" not in st.session_state:
+    st.session_state["recarregar"] = False  # controla atualização da tela
 
-def login(usuario, senha):
-    user = db.autenticar(usuario, senha)
-    if user:
-        st.session_state["logado"] = True
-        st.session_state["usuario"] = user
-        st.session_state["login_ok"] = True
-    else:
-        st.session_state["login_ok"] = False
-        st.error("Usuário ou senha incorretos.")
-
-def logout():
-    st.session_state["logado"] = False
-    st.session_state["usuario"] = None
-    st.session_state["login_ok"] = False
-
-# ----------------- Tela principal -----------------
+# ----------------- Tela de Login -----------------
 if not st.session_state["logado"]:
     st.title("📦 Sistema de Postagens - Login")
     usuario = st.text_input("Usuário")
     senha = st.text_input("Senha", type="password")
+    
     if st.button("Entrar"):
-        login(usuario, senha)
-    if st.session_state["login_ok"]:
-        st.success("Login realizado com sucesso!")
-        st.experimental_rerun()  # força recarregar a tela para mostrar o menu
+        user = db.autenticar(usuario, senha)
+        if user:
+            st.session_state["logado"] = True
+            st.session_state["usuario"] = user
+            st.session_state["recarregar"] = not st.session_state["recarregar"]
+            st.success("Login realizado com sucesso!")
+        else:
+            st.error("Usuário ou senha incorretos.")
 
+# ----------------- Tela Principal -----------------
 else:
     user = st.session_state["usuario"]
     admin = bool(user[4])
@@ -54,9 +45,13 @@ else:
     opcao = st.sidebar.radio("Selecione uma opção", opcoes)
     st.sidebar.markdown("---")
     st.sidebar.write(f"👤 {user[1]} ({'Admin' if admin else 'Usuário'})")
+    
+    # Logout automático
     if st.sidebar.button("Sair"):
-        logout()
-        st.experimental_rerun()
+        st.session_state["logado"] = False
+        st.session_state["usuario"] = None
+        st.session_state["recarregar"] = not st.session_state["recarregar"]
+        st.success("Logout realizado com sucesso!")
 
     # -------- CADASTRAR POSTAGEM --------
     if opcao == "Cadastrar Postagem":
@@ -96,7 +91,7 @@ else:
                     st.write(f"Data Postagem: {p[9]}")
                     st.write(f"Data Pagamento: {p[10]}")
 
-                    # Apenas se status for Pendente
+                    # Atualização de pagamento
                     if p[7] == "Pendente":
                         st.markdown("**Atualizar Pagamento**")
                         novo_status = st.selectbox("Status", ["Pendente", "Pago"], key=f"status_{p[0]}")
@@ -104,7 +99,7 @@ else:
                         if st.button("Salvar Alterações", key=f"btn_{p[0]}"):
                             db.atualizar_pagamento(p[0], novo_status, nova_data.strftime("%d/%m/%Y"))
                             st.success("Pagamento atualizado com sucesso!")
-                            st.experimental_rerun()
+
         else:
             st.info("Nenhuma postagem cadastrada.")
 
@@ -169,3 +164,4 @@ else:
 
     st.markdown("---")
     st.caption("Sistema desenvolvido por RobTechService © 2025")
+    st.caption("Versão 1.0.0")
