@@ -4,22 +4,22 @@ import db
 from utils import gerar_pdf, gerar_relatorio_mensal
 from streamlit_autorefresh import st_autorefresh
 
-# ------------------- Inicializa Banco -------------------
+# Inicializa banco
 db.criar_tabelas()
-st.set_page_config(page_title="Sistema de Postagens - Foguete Express", layout="centered")
+st.set_page_config(page_title="Sistema de Postagens", layout="centered")
 
-# ------------------- Sessão -------------------
+# ---------- Sessão ----------
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
 if "usuario" not in st.session_state:
     st.session_state["usuario"] = None
 
-# ------------------- Tela de Login -------------------
+# ---------- Login ----------
 if not st.session_state["logado"]:
-    st.title("📦 Sistema de Postagens - Foguete Express")
+    st.title("📦 Sistema de Postagens - Login")
     usuario = st.text_input("Usuário")
     senha = st.text_input("Senha", type="password")
-    
+
     if st.button("Entrar"):
         user = db.autenticar(usuario, senha)
         if user:
@@ -29,7 +29,7 @@ if not st.session_state["logado"]:
         else:
             st.error("Usuário ou senha incorretos.")
 
-# ------------------- Tela Principal -------------------
+# ---------- Tela Principal ----------
 else:
     user = st.session_state["usuario"]
     admin = bool(user['is_admin'])
@@ -37,18 +37,17 @@ else:
     st.sidebar.title("Menu")
     opcoes = ["Cadastrar Postagem", "Listar Postagens", "Fechamento Diário"]
     if admin:
-        opcoes.append("Gerenciar Usuários")
-        opcoes.append("Relatório Mensal")
+        opcoes.extend(["Gerenciar Usuários", "Relatório Mensal"])
 
     opcao = st.sidebar.radio("Selecione uma opção", opcoes)
     st.sidebar.markdown("---")
     st.sidebar.write(f"👤 {user['nome']} ({'Admin' if admin else 'Usuário'})")
-    
+
     # Logout
     if st.sidebar.button("Sair"):
         st.session_state["logado"] = False
         st.session_state["usuario"] = None
-        st.experimental_rerun()
+        st.success("Logout realizado com sucesso!")
 
     # -------- CADASTRAR POSTAGEM --------
     if opcao == "Cadastrar Postagem":
@@ -61,19 +60,18 @@ else:
         forma_pagamento = st.selectbox("Forma de Pagamento", ["Dinheiro", "PIX"])
         status_pagamento = st.selectbox("Status", ["Pago", "Pendente"])
         funcionario = st.selectbox("Funcionário", ["Jair", "Yuri"])
-        data_postagem = datetime.now().strftime("%Y-%m-%d")
-        data_pagamento = st.date_input("Data de Pagamento (opcional)").strftime("%Y-%m-%d")
+        data_postagem = datetime.now().strftime("%d/%m/%Y")
+        data_pagamento = st.date_input("Data de Pagamento (opcional)").strftime("%d/%m/%Y")
 
         if st.button("Salvar"):
             dados = (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
             db.adicionar_postagem(dados)
             st.success("Postagem cadastrada com sucesso!")
-            st.experimental_rerun()
 
     # -------- LISTAR POSTAGENS COM AUTO-REFRESH --------
     elif opcao == "Listar Postagens":
         st.header("📋 Lista de Postagens")
-        st_autorefresh(interval=5000, key="refresher")  # Atualiza a cada 5s
+        st_autorefresh(interval=5000, key="refresher")
 
         postagens = db.listar_postagens()
         if postagens:
@@ -95,9 +93,9 @@ else:
                         novo_status = st.selectbox("Status", ["Pendente", "Pago"], key=f"status_{p['id']}")
                         nova_data = st.date_input("Data Pagamento", value=datetime.now(), key=f"data_{p['id']}")
                         if st.button("Salvar Alterações", key=f"btn_{p['id']}"):
-                            db.atualizar_pagamento(p['id'], novo_status, nova_data.strftime("%Y-%m-%d"))
+                            db.atualizar_pagamento(p['id'], novo_status, nova_data.strftime("%d/%m/%Y"))
                             st.success("Pagamento atualizado com sucesso!")
-                            st.experimental_rerun()
+
         else:
             st.info("Nenhuma postagem cadastrada.")
 
@@ -124,7 +122,6 @@ else:
             try:
                 db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
                 st.success("Usuário criado com sucesso!")
-                st.experimental_rerun()
             except Exception as e:
                 st.error(f"Erro ao criar usuário: {e}")
 
@@ -136,7 +133,6 @@ else:
         if st.button("Resetar Senha"):
             db.resetar_senha(usuario_reset, nova_senha_reset)
             st.success(f"Senha do usuário '{usuario_reset}' foi resetada com sucesso!")
-            st.experimental_rerun()
 
         st.markdown("---")
         st.subheader("Usuários Cadastrados")
@@ -170,6 +166,5 @@ else:
             else:
                 st.warning("Nenhuma postagem encontrada para o filtro selecionado.")
 
-# ------------------- RODAPÉ -------------------
-st.markdown("---")
-st.caption("Sistema de Postagens - Foguete Express 🚀 desenvolvido por RobTech Service © 2025")
+    st.markdown("---")
+    st.caption("Sistema de Postagens - Foguete Express 🚀 desenvolvido por RobTech Service")
