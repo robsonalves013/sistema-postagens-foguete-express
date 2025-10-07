@@ -2,13 +2,14 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import bcrypt
 from datetime import datetime
+import os
 
-# Configurações do banco PostgreSQL no Render
+# Configurações do banco PostgreSQL via variáveis de ambiente
 DB_PARAMS = {
-    "host": "dpg-d3ijmvffte5s7391mug0-a",
-    "dbname": "postagens_db",
-    "user": "postagens_db_user",
-    "password": "ciXfjUZZcKBJi1xVIZhqxykaLeGMN8GR",
+    "host": os.environ.get("DB_HOST"),
+    "dbname": os.environ.get("DB_NAME"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
     "port": 5432
 }
 
@@ -110,8 +111,7 @@ def autenticar(usuario, senha):
     user = c.fetchone()
     conn.close()
     if user:
-        # Converte memoryview para bytes antes de verificar senha
-        senha_hash = bytes(user['senha'])
+        senha_hash = bytes(user['senha'])  # Converte memoryview para bytes
         if bcrypt.checkpw(senha.encode('utf-8'), senha_hash):
             return user
     return None
