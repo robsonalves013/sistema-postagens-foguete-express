@@ -5,10 +5,10 @@ from datetime import datetime
 
 # Configurações do banco PostgreSQL no Render
 DB_PARAMS = {
-    "host": "SEU_HOST_DO_RENDER",
-    "dbname": "SEU_DB",
-    "user": "SEU_USUARIO",
-    "password": "SUA_SENHA",
+    "host": "dpg-d3ijmvffte5s7391mug0-a",
+    "dbname": "postagens_db",
+    "user": "postagens_db_user",
+    "password": "ciXfjUZZcKBJi1xVIZhqxykaLeGMN8GR",
     "port": 5432
 }
 
