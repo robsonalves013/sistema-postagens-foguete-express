@@ -8,18 +8,18 @@ from streamlit_autorefresh import st_autorefresh
 db.criar_tabelas()
 st.set_page_config(page_title="Sistema de Postagens", layout="centered")
 
-# ---------- Sessão ----------
+# ------------------- Sessão -------------------
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
 if "usuario" not in st.session_state:
     st.session_state["usuario"] = None
 
-# ---------- Login ----------
+# ----------------- Tela de Login -----------------
 if not st.session_state["logado"]:
     st.title("📦 Sistema de Postagens - Login")
     usuario = st.text_input("Usuário")
     senha = st.text_input("Senha", type="password")
-
+    
     if st.button("Entrar"):
         user = db.autenticar(usuario, senha)
         if user:
@@ -29,7 +29,7 @@ if not st.session_state["logado"]:
         else:
             st.error("Usuário ou senha incorretos.")
 
-# ---------- Tela Principal ----------
+# ----------------- Tela Principal -----------------
 else:
     user = st.session_state["usuario"]
     admin = bool(user['is_admin'])
@@ -37,13 +37,14 @@ else:
     st.sidebar.title("Menu")
     opcoes = ["Cadastrar Postagem", "Listar Postagens", "Fechamento Diário"]
     if admin:
-        opcoes.extend(["Gerenciar Usuários", "Relatório Mensal"])
+        opcoes.append("Gerenciar Usuários")
+        opcoes.append("Relatório Mensal")
 
     opcao = st.sidebar.radio("Selecione uma opção", opcoes)
     st.sidebar.markdown("---")
     st.sidebar.write(f"👤 {user['nome']} ({'Admin' if admin else 'Usuário'})")
-
-    # Logout
+    
+    # Logout automático
     if st.sidebar.button("Sair"):
         st.session_state["logado"] = False
         st.session_state["usuario"] = None
@@ -71,7 +72,7 @@ else:
     # -------- LISTAR POSTAGENS COM AUTO-REFRESH --------
     elif opcao == "Listar Postagens":
         st.header("📋 Lista de Postagens")
-        st_autorefresh(interval=5000, key="refresher")
+        st_autorefresh(interval=5000, key="refresher")  # atualiza a lista a cada 5 segundos
 
         postagens = db.listar_postagens()
         if postagens:
@@ -120,7 +121,7 @@ else:
 
         if st.button("Criar Usuário"):
             try:
-                db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
+                db.criar_usuario(nome, novo_usuario, nova_senha, is_admin)
                 st.success("Usuário criado com sucesso!")
             except Exception as e:
                 st.error(f"Erro ao criar usuário: {e}")
