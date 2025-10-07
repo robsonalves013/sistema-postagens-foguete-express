@@ -83,6 +83,14 @@ def criar_usuario(nome, usuario, senha, is_admin=0):
     conn.commit()
     conn.close()
 
+def resetar_senha(usuario, nova_senha):
+    conn = conectar()
+    c = conn.cursor()
+    senha_hash = bcrypt.hashpw(nova_senha.encode('utf-8'), bcrypt.gensalt())
+    c.execute("UPDATE usuarios SET senha=? WHERE usuario=?", (senha_hash, usuario))
+    conn.commit()
+    conn.close()
+
 def autenticar(usuario, senha):
     conn = conectar()
     c = conn.cursor()

@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime
 import db
 from utils import gerar_pdf, gerar_relatorio_mensal
+from streamlit_autorefresh import st_autorefresh
 
 # Inicializa banco
 db.criar_tabelas()
@@ -72,11 +73,12 @@ else:
             db.adicionar_postagem(dados)
             st.success("Postagem cadastrada com sucesso!")
 
-    # -------- LISTAR POSTAGENS COM EDIÇÃO RÁPIDA --------
+    # -------- LISTAR POSTAGENS COM AUTO-REFRESH --------
     elif opcao == "Listar Postagens":
         st.header("📋 Lista de Postagens")
-        postagens = db.listar_postagens()
+        st_autorefresh(interval=5000, key="refresher")  # atualiza a lista a cada 5 segundos
 
+        postagens = db.listar_postagens()
         if postagens:
             for p in postagens:
                 with st.expander(f"📦 {p[3]} | {p[1]} | {p[2]}"):
@@ -91,7 +93,6 @@ else:
                     st.write(f"Data Postagem: {p[9]}")
                     st.write(f"Data Pagamento: {p[10]}")
 
-                    # Atualização de pagamento
                     if p[7] == "Pendente":
                         st.markdown("**Atualizar Pagamento**")
                         novo_status = st.selectbox("Status", ["Pendente", "Pago"], key=f"status_{p[0]}")
@@ -130,8 +131,16 @@ else:
                 st.error(f"Erro ao criar usuário: {e}")
 
         st.markdown("---")
-        st.subheader("Usuários Cadastrados")
+        st.subheader("Resetar Senha de Usuário")
         usuarios = db.listar_usuarios()
+        usuario_reset = st.selectbox("Selecione o usuário", [u[2] for u in usuarios])
+        nova_senha_reset = st.text_input("Nova senha", type="password", key="reset_senha")
+        if st.button("Resetar Senha"):
+            db.resetar_senha(usuario_reset, nova_senha_reset)
+            st.success(f"Senha do usuário '{usuario_reset}' foi resetada com sucesso!")
+
+        st.markdown("---")
+        st.subheader("Usuários Cadastrados")
         for u in usuarios:
             tipo = "Admin" if u[3] else "Usuário"
             st.write(f"👤 {u[1]} ({u[2]}) - {tipo}")
@@ -164,4 +173,3 @@ else:
 
     st.markdown("---")
     st.caption("Sistema desenvolvido por RobTechService © 2025")
-    st.caption("Versão 1.0.0")

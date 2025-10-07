@@ -1,3 +1,4 @@
 streamlit
 reportlab
 bcrypt
+streamlit-autorefresh
