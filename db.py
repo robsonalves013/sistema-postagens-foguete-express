@@ -5,10 +5,10 @@ from datetime import datetime
 
 # Configurações do banco PostgreSQL no Render
 DB_PARAMS = {
-    "host": "dpg-d3ijmvffte5s7391mug0-a",
-    "dbname": "postagens_db",
-    "user": "postagens_db_user",
-    "password": "ciXfjUZZcKBJi1xVIZhqxykaLeGMN8GR",
+    "host": "SEU_HOST_DO_RENDER",
+    "dbname": "SEU_DB",
+    "user": "SEU_USUARIO",
+    "password": "SUA_SENHA",
     "port": 5432
 }
 
@@ -109,8 +109,11 @@ def autenticar(usuario, senha):
     c.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
     user = c.fetchone()
     conn.close()
-    if user and bcrypt.checkpw(senha.encode('utf-8'), user['senha']):
-        return user
+    if user:
+        # Converte memoryview para bytes antes de verificar senha
+        senha_hash = bytes(user['senha'])
+        if bcrypt.checkpw(senha.encode('utf-8'), senha_hash):
+            return user
     return None
 
 def listar_postagens_mensal(mes, ano, posto=None, tipo=None, forma_pagamento=None):
