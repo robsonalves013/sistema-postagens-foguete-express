@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 from datetime import datetime
 import db
@@ -26,6 +27,7 @@ if not st.session_state["logado"]:
             st.session_state["logado"] = True
             st.session_state["usuario"] = user
             st.success("Login realizado com sucesso!")
+            st.experimental_rerun()  # força atualização da página
         else:
             st.error("Usuário ou senha incorretos.")
 
@@ -49,6 +51,7 @@ else:
         st.session_state["logado"] = False
         st.session_state["usuario"] = None
         st.success("Logout realizado com sucesso!")
+        st.experimental_rerun()  # força atualização da página
 
     # -------- CADASTRAR POSTAGEM --------
     if opcao == "Cadastrar Postagem":
@@ -68,6 +71,7 @@ else:
             dados = (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
             db.adicionar_postagem(dados)
             st.success("Postagem cadastrada com sucesso!")
+            st.experimental_rerun()  # atualiza lista após cadastro
 
     # -------- LISTAR POSTAGENS COM AUTO-REFRESH --------
     elif opcao == "Listar Postagens":
@@ -96,6 +100,7 @@ else:
                         if st.button("Salvar Alterações", key=f"btn_{p['id']}"):
                             db.atualizar_pagamento(p['id'], novo_status, nova_data.strftime("%d/%m/%Y"))
                             st.success("Pagamento atualizado com sucesso!")
+                            st.experimental_rerun()  # atualiza lista após alteração
 
         else:
             st.info("Nenhuma postagem cadastrada.")
@@ -121,8 +126,9 @@ else:
 
         if st.button("Criar Usuário"):
             try:
-                db.criar_usuario(nome, novo_usuario, nova_senha, is_admin)
+                db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
                 st.success("Usuário criado com sucesso!")
+                st.experimental_rerun()
             except Exception as e:
                 st.error(f"Erro ao criar usuário: {e}")
 
@@ -134,6 +140,7 @@ else:
         if st.button("Resetar Senha"):
             db.resetar_senha(usuario_reset, nova_senha_reset)
             st.success(f"Senha do usuário '{usuario_reset}' foi resetada com sucesso!")
+            st.experimental_rerun()
 
         st.markdown("---")
         st.subheader("Usuários Cadastrados")
