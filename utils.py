@@ -1,10 +1,8 @@
 from reportlab.pdfgen import canvas
 from io import BytesIO
 from datetime import datetime
-import streamlit as st
 
 def gerar_pdf(postagens):
-    """Gera PDF de fechamento diário"""
     buffer = BytesIO()
     c = canvas.Canvas(buffer)
     data_atual = datetime.now().strftime("%d/%m/%Y")
@@ -27,7 +25,6 @@ def gerar_pdf(postagens):
         f.write(buffer.getvalue())
 
 def gerar_relatorio_mensal(postagens):
-    """Gera PDF de relatório mensal"""
     buffer = BytesIO()
     c = canvas.Canvas(buffer)
     data_atual = datetime.now().strftime("%d/%m/%Y %H:%M")
