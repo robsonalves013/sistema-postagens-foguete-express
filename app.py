@@ -188,24 +188,24 @@ elif opcao == "Gerenciar Usuários" and admin:
     st.header("👥 Gerenciar Usuários")
 
         # --- Cadastrar Novo Usuário ---
-        st.subheader("Cadastrar Novo Usuário")
-        with st.form("cadastro_usuario"):
-            nome = st.text_input("Nome Completo", key="novo_nome")
-            novo_usuario = st.text_input("Usuário (login)", key="novo_usuario")
-            nova_senha = st.text_input("Senha", type="password", key="nova_senha")
-            is_admin = st.checkbox("Administrador", key="novo_admin")
-            if st.form_submit_button("Criar Usuário"):
-                try:
-                    db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
-                    st.success("Usuário criado com sucesso!")
+    st.subheader("Cadastrar Novo Usuário")
+    with st.form("cadastro_usuario"):
+        nome = st.text_input("Nome Completo", key="novo_nome")
+        novo_usuario = st.text_input("Usuário (login)", key="novo_usuario")
+        nova_senha = st.text_input("Senha", type="password", key="nova_senha")
+        is_admin = st.checkbox("Administrador", key="novo_admin")
+        if st.form_submit_button("Criar Usuário"):
+            try:
+                db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
+                st.success("Usuário criado com sucesso!")
                     
-                except Exception as e:
-                    st.error(f"Erro ao criar usuário: {e}")
+            except Exception as e:
+                st.error(f"Erro ao criar usuário: {e}")
 
-        st.markdown("---")
-        # --- Editar / Excluir Usuários ---
-        st.subheader("Editar / Excluir Usuários")
-        usuarios = db.listar_usuarios()
+    st.markdown("---")
+# --- Editar / Excluir Usuários ---
+    st.subheader("Editar / Excluir Usuários")
+    usuarios = db.listar_usuarios()
         for u in usuarios:
             with st.expander(f"👤 {u['nome']} ({u['usuario']})"):
                 novo_nome = st.text_input("Nome", u['nome'], key=f"nome_{u['id']}")
