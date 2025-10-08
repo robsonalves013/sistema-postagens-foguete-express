@@ -206,23 +206,23 @@ elif opcao == "Gerenciar Usuários" and admin:
 # --- Editar / Excluir Usuários ---
     st.subheader("Editar / Excluir Usuários")
     usuarios = db.listar_usuarios()
-        for u in usuarios:
-            with st.expander(f"👤 {u['nome']} ({u['usuario']})"):
-                novo_nome = st.text_input("Nome", u['nome'], key=f"nome_{u['id']}")
-                novo_admin = st.checkbox("Administrador", value=bool(u['is_admin']), key=f"admin_{u['id']}")
-                nova_senha = st.text_input("Nova senha (opcional)", type="password", key=f"senha_{u['id']}")
+    for u in usuarios:
+        with st.expander(f"👤 {u['nome']} ({u['usuario']})"):
+            novo_nome = st.text_input("Nome", u['nome'], key=f"nome_{u['id']}")
+            novo_admin = st.checkbox("Administrador", value=bool(u['is_admin']), key=f"admin_{u['id']}")
+            nova_senha = st.text_input("Nova senha (opcional)", type="password", key=f"senha_{u['id']}")
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    if st.button("💾 Salvar Alterações", key=f"salvar_{u['id']}"):
-                        db.atualizar_usuario(u['id'], novo_nome, nova_senha if nova_senha else None, int(novo_admin))
-                        st.success("Usuário atualizado com sucesso!")
-                        
-                with col2:
-                    if st.button("🗑️ Excluir Usuário", key=f"del_{u['id']}"):
-                        db.excluir_usuario(u['id'])
-                        st.warning("Usuário excluído com sucesso!")
-                        
+            col1, col2 = st.columns(2)
+        with col1:
+            if st.button("💾 Salvar Alterações", key=f"salvar_{u['id']}"):
+                db.atualizar_usuario(u['id'], novo_nome, nova_senha if nova_senha else None, int(novo_admin))
+                st.success("Usuário atualizado com sucesso!")
+                
+        with col2:
+            if st.button("🗑️ Excluir Usuário", key=f"del_{u['id']}"):
+                db.excluir_usuario(u['id'])
+                st.warning("Usuário excluído com sucesso!")
+                    
 
 # ---------------- RELATÓRIO MENSAL ----------------
 elif opcao == "Relatório Mensal" and admin:
