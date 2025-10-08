@@ -107,25 +107,47 @@ elif opcao == "Listar Postagens":
                 st.write(f"**Data Postagem:** {p['data_postagem']}")
                 st.write(f"**Data Pagamento:** {p['data_pagamento']}")
 
+                # Apenas admins podem editar
                 if admin:
                     st.divider()
                     st.subheader("✏️ Editar Postagem")
+                    
                     with st.form(f"editar_{p['id']}"):
+                        # Campos de edição
                         novo_posto = st.text_input("Posto", p['posto'])
                         novo_remetente = st.text_input("Remetente", p['remetente'])
                         novo_codigo = st.text_input("Código", p['codigo'])
-                        novo_tipo = st.selectbox("Tipo", ["PAC", "SEDEX"],
-                                                 index=["PAC", "SEDEX"].index(p['tipo']))
+
+                        tipos = ["Carta", "Encomenda", "Sedex"]
+                        if p['tipo'].capitalize() not in tipos:
+                            index_tipo = 0
+                        else:
+                            index_tipo = tipos.index(p['tipo'].capitalize())
+                        novo_tipo = st.selectbox("Tipo", tipos, index=index_tipo)
+
                         novo_valor = st.number_input("Valor (R$)", value=p['valor'])
-                        nova_forma = st.selectbox("Forma Pagamento", ["PIX", "Dinheiro", "Cartão"],
-                                                  index=["PIX", "Dinheiro", "Cartão"].index(p['forma_pagamento']))
-                        novo_status = st.selectbox("Status", ["Pendente", "Pago"],
-                                                   index=["Pendente", "Pago"].index(p['status_pagamento']))
+
+                        formas = ["PIX", "Dinheiro", "Cartão"]
+                        if p['forma_pagamento'].capitalize() not in formas:
+                            index_forma = 0
+                        else:
+                            index_forma = formas.index(p['forma_pagamento'].capitalize())
+                        nova_forma = st.selectbox("Forma Pagamento", formas, index=index_forma)
+
+                        status_opcoes = ["Pendente", "Pago"]
+                        if p['status_pagamento'].capitalize() not in status_opcoes:
+                            index_status = 0
+                        else:
+                            index_status = status_opcoes.index(p['status_pagamento'].capitalize())
+                        novo_status = st.selectbox("Status", status_opcoes, index=index_status)
+
                         novo_funcionario = st.text_input("Funcionário", p['funcionario'])
                         nova_data_postagem = st.date_input("Data Postagem", pd.to_datetime(p['data_postagem']).date())
                         nova_data_pagamento = st.date_input("Data Pagamento", pd.to_datetime(p['data_pagamento']).date())
 
-                        if st.form_submit_button("💾 Salvar Alterações"):
+                        # Botão de envio do formulário
+                        salvar_btn = st.form_submit_button("💾 Salvar Alterações")
+                        if salvar_btn:
                             novos_dados = (
                                 novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
                                 nova_forma, novo_status, novo_funcionario,
