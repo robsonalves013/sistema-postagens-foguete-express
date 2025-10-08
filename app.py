@@ -63,6 +63,7 @@ elif opcao == "Cadastrar Postagem":
     with st.form("form_postagem"):
         c1, c2 = st.columns(2)
         posto = c1.text_input("Posto")
+        posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"])
         remetente = c2.text_input("Remetente")
 
         codigo = st.text_input("Código de Rastreamento")

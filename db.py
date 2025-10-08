@@ -5,15 +5,12 @@ import bcrypt
 import os
 from datetime import datetime
 
-# ------------------- Configurações do Banco -------------------
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://usuario:senha@host:porta/banco")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# ------------------- Conexão -------------------
 def conectar():
     """Conecta ao banco PostgreSQL e retorna a conexão."""
     return psycopg.connect(DATABASE_URL, row_factory=dict_row, sslmode="require")
 
-# ------------------- Criação de Tabelas -------------------
 def criar_tabelas():
     """Cria tabelas de usuários e postagens, caso não existam."""
     with conectar() as conn:
@@ -32,7 +29,7 @@ def criar_tabelas():
                 id SERIAL PRIMARY KEY,
                 posto TEXT,
                 remetente TEXT,
-                codigo TEXT,
+                codigo TEXT UNIQUE,
                 tipo TEXT,
                 valor NUMERIC,
                 forma_pagamento TEXT,
@@ -46,7 +43,6 @@ def criar_tabelas():
 
 # ------------------- Usuários -------------------
 def criar_usuario(nome, usuario, senha, is_admin=False):
-    """Cria um novo usuário com senha criptografada."""
     senha_hash = bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt())
     with conectar() as conn:
         with conn.cursor() as cur:
@@ -57,7 +53,6 @@ def criar_usuario(nome, usuario, senha, is_admin=False):
         conn.commit()
 
 def autenticar(usuario, senha):
-    """Autentica um usuário verificando a senha criptografada."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
@@ -67,14 +62,12 @@ def autenticar(usuario, senha):
     return None
 
 def listar_usuarios():
-    """Retorna todos os usuários cadastrados (sem mostrar senhas)."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT id, nome, usuario, is_admin FROM usuarios ORDER BY id")
             return cur.fetchall()
 
 def atualizar_usuario(user_id, nome, senha=None, is_admin=False):
-    """Atualiza nome, senha (opcional) e privilégio de um usuário."""
     with conectar() as conn:
         with conn.cursor() as cur:
             if senha:
@@ -93,14 +86,12 @@ def atualizar_usuario(user_id, nome, senha=None, is_admin=False):
         conn.commit()
 
 def excluir_usuario(user_id):
-    """Remove permanentemente um usuário pelo ID."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM usuarios WHERE id=%s", (user_id,))
         conn.commit()
 
 def resetar_senha(usuario, nova_senha):
-    """Redefine a senha de um usuário específico."""
     nova_hash = bcrypt.hashpw(nova_senha.encode("utf-8"), bcrypt.gensalt())
     with conectar() as conn:
         with conn.cursor() as cur:
@@ -108,52 +99,44 @@ def resetar_senha(usuario, nova_senha):
         conn.commit()
 
 # ------------------- Postagens -------------------
+def codigo_existe(codigo):
+    with conectar() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT id FROM postagens WHERE codigo = %s", (codigo,))
+            return cursor.fetchone() is not None
+
 def adicionar_postagem(dados):
     posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento = dados
-
     if codigo_existe(codigo):
         raise ValueError("Código de rastreio já cadastrado.")
+    with conectar() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO postagens 
+                (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento))
+        conn.commit()
 
-    conn = conectar()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO postagens (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento))
-    conn.commit()
-    conn.close()
-    
-def codigo_existe(codigo):
-    conn = conectar()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM postagens WHERE codigo = ?", (codigo,))
-    existe = cursor.fetchone() is not None
-    conn.close()
-    return existe
-    
 def editar_postagem(id_postagem, novos_dados):
-    conn = conectar()
-    cursor = conn.cursor()
-    cursor.execute("""
-        UPDATE postagens
-        SET posto = ?, remetente = ?, codigo = ?, tipo = ?, valor = ?, 
-            forma_pagamento = ?, status_pagamento = ?, funcionario = ?, 
-            data_postagem = ?, data_pagamento = ?
-        WHERE id = ?
-    """, (*novos_dados, id_postagem))
-    conn.commit()
-    conn.close()
-
+    with conectar() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                UPDATE postagens
+                SET posto=%s, remetente=%s, codigo=%s, tipo=%s, valor=%s, 
+                    forma_pagamento=%s, status_pagamento=%s, funcionario=%s, 
+                    data_postagem=%s, data_pagamento=%s
+                WHERE id=%s
+            """, (*novos_dados, id_postagem))
+        conn.commit()
 
 def listar_postagens():
-    """Lista todas as postagens registradas (mais recentes primeiro)."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM postagens ORDER BY id DESC")
             return cur.fetchall()
 
 def listar_postagens_pendentes():
-    """Retorna todas as postagens com pagamento pendente."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -164,7 +147,6 @@ def listar_postagens_pendentes():
             return cur.fetchall()
 
 def atualizar_pagamento(postagem_id, status, data_pagamento):
-    """Atualiza o status e a data de pagamento de uma postagem."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -175,7 +157,6 @@ def atualizar_pagamento(postagem_id, status, data_pagamento):
         conn.commit()
 
 def listar_postagens_mensal(mes, ano, filtro_posto=None, filtro_tipo=None, filtro_forma=None):
-    """Filtra postagens por mês, ano e filtros opcionais (posto, tipo, forma)."""
     with conectar() as conn:
         with conn.cursor() as cur:
             query = """
@@ -196,7 +177,3 @@ def listar_postagens_mensal(mes, ano, filtro_posto=None, filtro_tipo=None, filtr
             query += " ORDER BY id DESC"
             cur.execute(query, params)
             return cur.fetchall()
-        
-
-
-
