@@ -79,7 +79,10 @@ elif opcao == "Cadastrar Postagem":
 
         funcionario = st.text_input("Funcionário")
         data_postagem = st.date_input("Data da Postagem", datetime.today())
-        data_pagamento = st.date_input("Data do Pagamento", datetime.today())
+        if status_pagamento == "Pago":
+            data_pagamento = st.date_input("Data do Pagamento", datetime.today())
+        else:
+            data_pagamento = ""
 
         cadastrar_btn = st.form_submit_button("💾 Cadastrar")
 
@@ -160,7 +163,10 @@ elif opcao == "Listar Postagens":
 
                         novo_funcionario = st.text_input("Funcionário", p['funcionario'])
                         nova_data_postagem = st.date_input("Data Postagem", pd.to_datetime(p['data_postagem']).date())
-                        nova_data_pagamento = st.date_input("Data Pagamento", pd.to_datetime(p['data_pagamento']).date())
+                        if novo_status == "Pago":
+                            nova_data_pagamento = st.date_input("Data Pagamento", pd.to_datetime(p['data_pagamento']).date() if p['data_pagamento'] else datetime.today())
+                        else:
+                            nova_data_pagamento = ""
 
                         # Botão de envio do formulário
                         salvar_btn = st.form_submit_button("💾 Salvar Alterações")
@@ -172,6 +178,10 @@ elif opcao == "Listar Postagens":
                             )
                             db.editar_postagem(p["id"], novos_dados)
                             st.success("✅ Postagem atualizada com sucesso!")
+                    # Botão para excluir
+                        if st.button("🗑️ Excluir Postagem", key=f"excluir_{p['id']}"):
+                            db.excluir_postagem(p['id'])
+                            st.success(f"Postagem {p['codigo']} excluída com sucesso!")
                 else:
                     st.caption("🔒 Somente administradores podem editar postagens.")
 

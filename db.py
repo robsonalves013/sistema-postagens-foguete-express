@@ -129,6 +129,13 @@ def editar_postagem(id_postagem, novos_dados):
                 WHERE id=%s
             """, (*novos_dados, id_postagem))
         conn.commit()
+def excluir_postagem(postagem_id):
+    """Exclui uma postagem pelo ID."""
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM postagens WHERE id=%s", (postagem_id,))
+        conn.commit()
+
 
 def listar_postagens():
     with conectar() as conn:
