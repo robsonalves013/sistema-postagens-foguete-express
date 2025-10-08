@@ -4,6 +4,12 @@ from datetime import datetime
 
 # ---------- PDF fechamento diário ----------
 def gerar_pdf(postagens):
+    if not postagens:
+        return None
+
+    data_hoje = datetime.now().strftime("%d-%m-%Y")
+    nome_arquivo = f"fechamento_{data_hoje}.pdf"
+
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
@@ -31,15 +37,22 @@ def gerar_pdf(postagens):
         pdf.cell(25, 8, p['status_pagamento'], border=1)
         pdf.ln()
 
-    pdf.output("fechamento.pdf")
+    pdf.output(nome_arquivo)
+    return nome_arquivo
 
 
 # ---------- Relatório mensal ----------
 def gerar_relatorio_mensal(postagens):
+    if not postagens:
+        return None
+
+    data_hoje = datetime.now().strftime("%d-%m-%Y")
+    nome_arquivo = f"relatorio_mensal_{data_hoje}.pdf"
+
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "Relatório Mensal", ln=True, align='C')
+    pdf.cell(0, 10, f"Relatório Mensal - {datetime.now().strftime('%d/%m/%Y')}", ln=True, align='C')
     pdf.ln(5)
     pdf.set_font("Arial", size=12)
 
@@ -63,4 +76,5 @@ def gerar_relatorio_mensal(postagens):
         pdf.cell(25, 8, p['status_pagamento'], border=1)
         pdf.ln()
 
-    pdf.output("relatorio_mensal.pdf")
+    pdf.output(nome_arquivo)
+    return nome_arquivo
