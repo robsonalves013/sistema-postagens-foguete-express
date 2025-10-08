@@ -151,39 +151,41 @@ elif opcao == "Listar Postagens":
                 else:
                     st.caption("🔒 Somente administradores podem editar postagens.")
 
-    # ---------------- PAGAMENTOS PENDENTES ----------------
-    elif opcao == "Pagamentos Pendentes":
-        st.header("💰 Pagamentos Pendentes")
-        pendentes = db.listar_postagens_pendentes()
-        if not pendentes:
-            st.info("Nenhum pagamento pendente encontrado.")
+
+# ---------------- PAGAMENTOS PENDENTES ----------------
+elif opcao == "Pagamentos Pendentes":
+    st.header("💰 Pagamentos Pendentes")
+    pendentes = db.listar_postagens_pendentes()
+    if not pendentes:
+        st.info("Nenhum pagamento pendente encontrado.")
+    else:
+        for p in pendentes:
+            with st.expander(f"📦 {p['codigo']} | {p['posto']} | R$ {p['valor']:.2f}"):
+                st.write(f"Remetente: {p['remetente']}")
+                st.write(f"Funcionário: {p['funcionario']}")
+                st.write(f"Data Postagem: {p['data_postagem']}")
+                if st.button("✅ Marcar como Pago", key=f"pago_{p['id']}"):
+                    data_atual = datetime.now().strftime("%d/%m/%Y")
+                    db.atualizar_pagamento(p['id'], "Pago", data_atual)
+                    st.success(f"Pagamento da postagem {p['codigo']} marcado como pago em {data_atual}!")
+
+
+# ---------------- FECHAMENTO DIÁRIO ----------------
+elif opcao == "Fechamento Diário":
+    st.header("🧾 Fechamento Diário")
+    postagens = db.listar_postagens()
+    if st.button("Gerar PDF"):
+        nome_pdf = gerar_pdf(postagens)
+        if nome_pdf:
+            with open(nome_pdf, "rb") as f:
+                st.download_button("Baixar PDF", f, file_name=nome_pdf)
         else:
-            for p in pendentes:
-                with st.expander(f"📦 {p['codigo']} | {p['posto']} | R$ {p['valor']:.2f}"):
-                    st.write(f"Remetente: {p['remetente']}")
-                    st.write(f"Funcionário: {p['funcionario']}")
-                    st.write(f"Data Postagem: {p['data_postagem']}")
-                    if st.button("✅ Marcar como Pago", key=f"pago_{p['id']}"):
-                        data_atual = datetime.now().strftime("%d/%m/%Y")
-                        db.atualizar_pagamento(p['id'], "Pago", data_atual)
-                        st.success(f"Pagamento da postagem {p['codigo']} marcado como pago em {data_atual}!")
-                        
+            st.info("Nenhuma postagem para gerar PDF.")
 
-    # ---------------- FECHAMENTO DIÁRIO ----------------
-    elif opcao == "Fechamento Diário":
-        st.header("🧾 Fechamento Diário")
-        postagens = db.listar_postagens()
-        if st.button("Gerar PDF"):
-            nome_pdf = gerar_pdf(postagens)
-            if nome_pdf:
-                with open(nome_pdf, "rb") as f:
-                    st.download_button("Baixar PDF", f, file_name=nome_pdf)
-            else:
-                st.info("Nenhuma postagem para gerar PDF.")
 
-    # ---------------- GERENCIAR USUÁRIOS ----------------
-    elif opcao == "Gerenciar Usuários" and admin:
-        st.header("👥 Gerenciar Usuários")
+# ---------------- GERENCIAR USUÁRIOS ----------------
+elif opcao == "Gerenciar Usuários" and admin:
+    st.header("👥 Gerenciar Usuários")
 
         # --- Cadastrar Novo Usuário ---
         st.subheader("Cadastrar Novo Usuário")
@@ -222,9 +224,9 @@ elif opcao == "Listar Postagens":
                         st.warning("Usuário excluído com sucesso!")
                         
 
-    # ---------------- RELATÓRIO MENSAL ----------------
-    elif opcao == "Relatório Mensal" and admin:
-        st.header("📊 Relatório Mensal")
+# ---------------- RELATÓRIO MENSAL ----------------
+elif opcao == "Relatório Mensal" and admin:
+    st.header("📊 Relatório Mensal")
         col1, col2 = st.columns(2)
         with col1:
             mes = st.number_input("Mês", min_value=1, max_value=12, value=datetime.now().month)
