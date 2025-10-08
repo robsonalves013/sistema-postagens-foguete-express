@@ -60,10 +60,9 @@ if opcao == "Dashboard":
 elif opcao == "Cadastrar Postagem":
     st.header("📝 Cadastrar Nova Postagem")
 
-    with st.form("form_postagem"):        
+    with st.form("form_postagem"):
         posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"])
-        c1 = st.columns(1)
-        remetente = c1.text_input("Remetente")
+        remetente = st.text_input("Remetente")
 
         codigo = st.text_input("Código de Rastreamento")
 
