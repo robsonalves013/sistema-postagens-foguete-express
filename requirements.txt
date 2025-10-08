@@ -1,5 +1,7 @@
-streamlit==1.50.0
-reportlab==4.4.4
-bcrypt==5.0.0
-streamlit-autorefresh==1.0.1
-psycopg[binary]==3.2.10
+streamlit
+psycopg[binary]
+bcrypt
+pandas
+plotly
+fpdf
+streamlit-autorefresh
