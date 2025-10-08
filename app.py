@@ -8,7 +8,7 @@ from dashboard import mostrar_dashboard  # Dashboard modularizado
 
 # ---------------- Inicializa banco ----------------
 db.criar_tabelas()
-st.set_page_config(page_title="Sistema de Postagens", layout="centered")
+st.set_page_config(page_title="Sistema de Postagens", layout="wide")
 
 # ---------------- Sessão ----------------
 if "logado" not in st.session_state:
@@ -19,109 +19,126 @@ if "usuario" not in st.session_state:
 # ---------------- Tela de Login ----------------
 if not st.session_state["logado"]:
     st.title("📦 Sistema de Postagens - Login")
-    
     with st.form("login_form"):
         usuario = st.text_input("Usuário")
         senha = st.text_input("Senha", type="password")
-        submitted = st.form_submit_button("Entrar")
-        
-        if submitted:
+        login_btn = st.form_submit_button("Entrar")
+
+        if login_btn:
             user = db.autenticar(usuario, senha)
             if user:
                 st.session_state["logado"] = True
                 st.session_state["usuario"] = user
-                st.success("Login realizado com sucesso!")
-                  # Força atualização da página
+                st.success("✅ Login realizado com sucesso!")
             else:
-                st.error("Usuário ou senha incorretos.")
+                st.error("❌ Usuário ou senha incorretos.")
+    st.stop()
 
-# ---------------- Tela Principal ----------------
-else:
-    user = st.session_state["usuario"]
-    admin = bool(user['is_admin'])
+# ---------------- Menu Lateral ----------------
+usuario = st.session_state["usuario"]
+admin = usuario["tipo"] == "admin"
 
-    st.sidebar.title("Menu")
-    opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Pagamentos Pendentes", "Fechamento Diário"]
-    if admin:
-        opcoes.append("Gerenciar Usuários")
-        opcoes.append("Relatório Mensal")
+st.sidebar.title(f"👋 Olá, {usuario['nome']}")
+opcao = st.sidebar.radio(
+    "Navegação",
+    ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Gerenciar Usuários" if admin else None],
+)
+if st.sidebar.button("🚪 Sair"):
+    st.session_state["logado"] = False
+    st.session_state["usuario"] = None
+    st.experimental_set_query_params()
+    st.rerun()
 
-    opcao = st.sidebar.radio("Selecione uma opção", opcoes)
-    st.sidebar.markdown("---")
-    st.sidebar.write(f"👤 {user['nome']} ({'Admin' if admin else 'Usuário'})")
+# ---------------- DASHBOARD ----------------
+if opcao == "Dashboard":
+    st.header("📊 Dashboard - Resumo das Postagens")
 
-    if st.sidebar.button("Sair"):
-        st.session_state["logado"] = False
-        st.session_state["usuario"] = None
-          # Força atualizar para tela de login
+    postagens = db.listar_postagens()
+    if not postagens:
+        st.info("Nenhuma postagem cadastrada ainda.")
+    else:
+        df = pd.DataFrame(postagens)
+        total = df["valor"].sum()
+        pendentes = len(df[df["status_pagamento"] == "Pendente"])
+        pagas = len(df[df["status_pagamento"] == "Pago"])
 
-    # ---------------- DASHBOARD ----------------
-    if opcao == "Dashboard":
-        mostrar_dashboard()
+        c1, c2, c3 = st.columns(3)
+        c1.metric("💰 Total em R$", f"{total:,.2f}")
+        c2.metric("📦 Pagas", pagas)
+        c3.metric("⌛ Pendentes", pendentes)
 
-    # ---------------- CADASTRAR POSTAGEM ----------------
-    elif opcao == "Cadastrar Postagem":
-        st.header("📮 Nova Postagem")
-        with st.form("cadastro_postagem"):
-            posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"])
-            remetente = st.text_input("Remetente")
-            codigo = st.text_input("Código de Rastreamento")
-            tipo = st.selectbox("Tipo de Postagem", ["PAC", "SEDEX"])
-            valor = st.number_input("Valor (R$)", min_value=0.0, step=0.5)
-            forma_pagamento = st.selectbox("Forma de Pagamento", ["Dinheiro", "PIX"])
-            status_pagamento = st.selectbox("Status", ["Pago", "Pendente"])
-            funcionario = st.selectbox("Funcionário", ["Jair", "Yuri"])
-            data_postagem = datetime.now().strftime("%d/%m/%Y")
-            data_pagamento = st.date_input("Data de Pagamento (opcional)").strftime("%d/%m/%Y")
-            
-            if st.button("Salvar"):
-                dados = (posto, remetente, codigo, tipo, valor, forma_pagamento,
-                        status_pagamento, funcionario, data_postagem, data_pagamento)
-                try:
-                    db.adicionar_postagem(dados)
-                    st.success("✅ Postagem cadastrada com sucesso!")
-                except ValueError as e:
-                    st.error(f"❌ {e}")
-                except Exception as e:
-                    st.error(f"Erro ao cadastrar postagem: {e}")
+        st.dataframe(df, use_container_width=True)
 
-                
+# ---------------- CADASTRAR POSTAGEM ----------------
+elif opcao == "Cadastrar Postagem":
+    st.header("📝 Cadastrar Nova Postagem")
 
-    # ---------------- LISTAR POSTAGENS ----------------
-    elif opcao == "Listar Postagens":
+    with st.form("form_postagem"):
+        c1, c2 = st.columns(2)
+        posto = c1.text_input("Posto")
+        remetente = c2.text_input("Remetente")
+
+        codigo = st.text_input("Código de Rastreamento")
+        tipo = st.selectbox("Tipo", ["Carta", "Encomenda", "Sedex"])
+        valor = st.number_input("Valor (R$)", min_value=0.0, step=0.01)
+        forma_pagamento = st.selectbox("Forma de Pagamento", ["Pix", "Dinheiro", "Cartão"])
+        status_pagamento = st.selectbox("Status do Pagamento", ["Pendente", "Pago"])
+        funcionario = st.text_input("Funcionário")
+        data_postagem = st.date_input("Data da Postagem", datetime.today())
+        data_pagamento = st.date_input("Data do Pagamento", datetime.today())
+
+        cadastrar_btn = st.form_submit_button("💾 Cadastrar")
+
+        if cadastrar_btn:
+            # Verificar duplicidade do código
+            if db.codigo_existe(codigo):
+                st.error("❌ Código de rastreio já cadastrado.")
+            else:
+                dados = (
+                    posto, remetente, codigo, tipo, valor, forma_pagamento,
+                    status_pagamento, funcionario, str(data_postagem), str(data_pagamento)
+                )
+                db.inserir_postagem(dados)
+                st.success("✅ Postagem cadastrada com sucesso!")
+
+# ---------------- LISTAR POSTAGENS ----------------
+elif opcao == "Listar Postagens":
     st.header("📋 Lista de Postagens")
+
     postagens = db.listar_postagens()
     if not postagens:
         st.info("Nenhuma postagem cadastrada.")
     else:
         for p in postagens:
             with st.expander(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}"):
-                st.write(f"Posto: {p['posto']}")
-                st.write(f"Remetente: {p['remetente']}")
-                st.write(f"Código: {p['codigo']}")
-                st.write(f"Tipo: {p['tipo']}")
-                st.write(f"Valor: R$ {p['valor']:.2f}")
-                st.write(f"Forma de Pagamento: {p['forma_pagamento']}")
-                st.write(f"Status: {p['status_pagamento']}")
-                st.write(f"Funcionário: {p['funcionario']}")
-                st.write(f"Data Postagem: {p['data_postagem']}")
-                st.write(f"Data Pagamento: {p['data_pagamento']}")
+                st.write(f"**Posto:** {p['posto']}")
+                st.write(f"**Remetente:** {p['remetente']}")
+                st.write(f"**Código:** {p['codigo']}")
+                st.write(f"**Tipo:** {p['tipo']}")
+                st.write(f"**Valor:** R$ {p['valor']:.2f}")
+                st.write(f"**Forma Pagamento:** {p['forma_pagamento']}")
+                st.write(f"**Status:** {p['status_pagamento']}")
+                st.write(f"**Funcionário:** {p['funcionario']}")
+                st.write(f"**Data Postagem:** {p['data_postagem']}")
+                st.write(f"**Data Pagamento:** {p['data_pagamento']}")
 
-                # Apenas administradores podem editar
                 if admin:
                     st.divider()
                     st.subheader("✏️ Editar Postagem")
-                    with st.form(f"editar_postagem_{p['id']}"):
+                    with st.form(f"editar_{p['id']}"):
                         novo_posto = st.text_input("Posto", p['posto'])
                         novo_remetente = st.text_input("Remetente", p['remetente'])
                         novo_codigo = st.text_input("Código", p['codigo'])
-                        novo_tipo = st.selectbox("Tipo", ["Carta", "Encomenda", "Sedex"], index=["Carta", "Encomenda", "Sedex"].index(p['tipo']))
-                        novo_valor = st.number_input("Valor (R$)", value=p['valor'], min_value=0.0)
-                        nova_forma = st.selectbox("Forma de Pagamento", ["Pix", "Dinheiro", "Cartão"], index=["Pix", "Dinheiro", "Cartão"].index(p['forma_pagamento']))
-                        novo_status = st.selectbox("Status Pagamento", ["Pendente", "Pago"], index=["Pendente", "Pago"].index(p['status_pagamento']))
+                        novo_tipo = st.selectbox("Tipo", ["Carta", "Encomenda", "Sedex"],
+                                                 index=["Carta", "Encomenda", "Sedex"].index(p['tipo']))
+                        novo_valor = st.number_input("Valor (R$)", value=p['valor'])
+                        nova_forma = st.selectbox("Forma Pagamento", ["Pix", "Dinheiro", "Cartão"],
+                                                  index=["Pix", "Dinheiro", "Cartão"].index(p['forma_pagamento']))
+                        novo_status = st.selectbox("Status", ["Pendente", "Pago"],
+                                                   index=["Pendente", "Pago"].index(p['status_pagamento']))
                         novo_funcionario = st.text_input("Funcionário", p['funcionario'])
-                        nova_data_postagem = st.date_input("Data Postagem", value=pd.to_datetime(p['data_postagem']).date())
-                        nova_data_pagamento = st.date_input("Data Pagamento", value=pd.to_datetime(p['data_pagamento']).date())
+                        nova_data_postagem = st.date_input("Data Postagem", pd.to_datetime(p['data_postagem']).date())
+                        nova_data_pagamento = st.date_input("Data Pagamento", pd.to_datetime(p['data_pagamento']).date())
 
                         if st.form_submit_button("💾 Salvar Alterações"):
                             novos_dados = (
@@ -129,11 +146,8 @@ else:
                                 nova_forma, novo_status, novo_funcionario,
                                 str(nova_data_postagem), str(nova_data_pagamento)
                             )
-                            try:
-                                db.editar_postagem(p['id'], novos_dados)
-                                st.success("✅ Postagem atualizada com sucesso!")
-                            except Exception as e:
-                                st.error(f"Erro ao editar: {e}")
+                            db.editar_postagem(p["id"], novos_dados)
+                            st.success("✅ Postagem atualizada com sucesso!")
                 else:
                     st.caption("🔒 Somente administradores podem editar postagens.")
 

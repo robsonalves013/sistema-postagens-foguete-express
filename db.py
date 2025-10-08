@@ -123,6 +123,14 @@ def adicionar_postagem(dados):
     conn.commit()
     conn.close()
     
+def codigo_existe(codigo):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM postagens WHERE codigo = ?", (codigo,))
+    existe = cursor.fetchone() is not None
+    conn.close()
+    return existe
+    
 def editar_postagem(id_postagem, novos_dados):
     conn = conectar()
     cursor = conn.cursor()
@@ -189,11 +197,6 @@ def listar_postagens_mensal(mes, ano, filtro_posto=None, filtro_tipo=None, filtr
             cur.execute(query, params)
             return cur.fetchall()
         
-def codigo_existe(codigo):
-    conn = conectar()
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM postagens WHERE codigo = ?", (codigo,))
-    existe = cursor.fetchone()[0] > 0
-    conn.close()
-    return existe
+
+
 
