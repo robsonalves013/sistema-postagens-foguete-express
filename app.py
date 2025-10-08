@@ -90,9 +90,10 @@ else:
     # ---------------- LISTAR POSTAGENS ----------------
     elif opcao == "Listar Postagens":
     st.header("📋 Lista de Postagens")
-    st_autorefresh(interval=5000, key="refresher")
     postagens = db.listar_postagens()
-    if postagens:
+    if not postagens:
+        st.info("Nenhuma postagem cadastrada.")
+    else:
         for p in postagens:
             with st.expander(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}"):
                 st.write(f"Posto: {p['posto']}")
@@ -106,13 +107,35 @@ else:
                 st.write(f"Data Postagem: {p['data_postagem']}")
                 st.write(f"Data Pagamento: {p['data_pagamento']}")
 
-                # Somente admin pode editar
+                # Apenas administradores podem editar
                 if admin:
-                    if st.button("✏️ Editar", key=f"editar_{p['id']}"):
-                        st.warning("Função de edição disponível apenas para administradores (em desenvolvimento).")
-    else:
-        st.info("Nenhuma postagem cadastrada.")
+                    st.divider()
+                    st.subheader("✏️ Editar Postagem")
+                    with st.form(f"editar_postagem_{p['id']}"):
+                        novo_posto = st.text_input("Posto", p['posto'])
+                        novo_remetente = st.text_input("Remetente", p['remetente'])
+                        novo_codigo = st.text_input("Código", p['codigo'])
+                        novo_tipo = st.selectbox("Tipo", ["Carta", "Encomenda", "Sedex"], index=["Carta", "Encomenda", "Sedex"].index(p['tipo']))
+                        novo_valor = st.number_input("Valor (R$)", value=p['valor'], min_value=0.0)
+                        nova_forma = st.selectbox("Forma de Pagamento", ["Pix", "Dinheiro", "Cartão"], index=["Pix", "Dinheiro", "Cartão"].index(p['forma_pagamento']))
+                        novo_status = st.selectbox("Status Pagamento", ["Pendente", "Pago"], index=["Pendente", "Pago"].index(p['status_pagamento']))
+                        novo_funcionario = st.text_input("Funcionário", p['funcionario'])
+                        nova_data_postagem = st.date_input("Data Postagem", value=pd.to_datetime(p['data_postagem']).date())
+                        nova_data_pagamento = st.date_input("Data Pagamento", value=pd.to_datetime(p['data_pagamento']).date())
 
+                        if st.form_submit_button("💾 Salvar Alterações"):
+                            novos_dados = (
+                                novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
+                                nova_forma, novo_status, novo_funcionario,
+                                str(nova_data_postagem), str(nova_data_pagamento)
+                            )
+                            try:
+                                db.editar_postagem(p['id'], novos_dados)
+                                st.success("✅ Postagem atualizada com sucesso!")
+                            except Exception as e:
+                                st.error(f"Erro ao editar: {e}")
+                else:
+                    st.caption("🔒 Somente administradores podem editar postagens.")
 
     # ---------------- PAGAMENTOS PENDENTES ----------------
     elif opcao == "Pagamentos Pendentes":

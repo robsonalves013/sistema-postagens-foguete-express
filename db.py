@@ -122,6 +122,19 @@ def adicionar_postagem(dados):
     """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento))
     conn.commit()
     conn.close()
+    
+def editar_postagem(id_postagem, novos_dados):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE postagens
+        SET posto = ?, remetente = ?, codigo = ?, tipo = ?, valor = ?, 
+            forma_pagamento = ?, status_pagamento = ?, funcionario = ?, 
+            data_postagem = ?, data_pagamento = ?
+        WHERE id = ?
+    """, (*novos_dados, id_postagem))
+    conn.commit()
+    conn.close()
 
 
 def listar_postagens():
