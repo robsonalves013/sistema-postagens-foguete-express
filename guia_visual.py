@@ -1,6 +1,6 @@
 # guia_visual.py
 from fpdf import FPDF
-from datetime import datetime
+from io import BytesIO
 
 class GuiaVisual(FPDF):
     def header(self):

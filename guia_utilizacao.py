@@ -1,6 +1,6 @@
 # guia_utilizacao.py
 from fpdf import FPDF
-from datetime import datetime
+from io import BytesIO
 
 def gerar_guia_utilizacao(nome_arquivo="guia_utilizacao.pdf"):
     pdf = FPDF()

@@ -40,7 +40,7 @@ usuario = st.session_state["usuario"]
 admin = bool(usuario.get("is_admin", 0))
 
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
-opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Pagamentos Pendentes", "Fechamento Diário"]
+opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Pagamentos Pendentes", "Fechamento Diário", "Guia"]
 if admin:
     opcoes.extend(["Gerenciar Usuários", "Relatório Mensal"])
 
@@ -125,9 +125,9 @@ elif opcao == "Listar Postagens":
                 st.write(f"**Status:** {p['status_pagamento']}")
                 st.write(f"**Funcionário:** {p['funcionario']}")
                 st.write(f"**Data Postagem:** {p['data_postagem']}")
-                st.write(f"**Data Pagamento:** {p['data_pagamento']}")
+                st.write(f"**Data Pagamento:** {p['data_pagamento'] or ''}")
 
-                # Apenas admins podem editar
+                # Apenas admins podem editar/excluir
                 if admin:
                     st.divider()
                     st.subheader("✏️ Editar Postagem")
@@ -139,49 +139,46 @@ elif opcao == "Listar Postagens":
                         novo_codigo = st.text_input("Código", p['codigo'])
 
                         tipos = ["PAC", "Encomenda", "SEDEX"]
-                        if p['tipo'].capitalize() not in tipos:
-                            index_tipo = 0
-                        else:
-                            index_tipo = tipos.index(p['tipo'].capitalize())
+                        index_tipo = tipos.index(p['tipo']) if p['tipo'] in tipos else 0
                         novo_tipo = st.selectbox("Tipo", tipos, index=index_tipo)
 
                         novo_valor = st.number_input("Valor (R$)", value=p['valor'])
 
                         formas = ["PIX", "Dinheiro", "Cartão"]
-                        if p['forma_pagamento'].capitalize() not in formas:
-                            index_forma = 0
-                        else:
-                            index_forma = formas.index(p['forma_pagamento'].capitalize())
+                        index_forma = formas.index(p['forma_pagamento']) if p['forma_pagamento'] in formas else 0
                         nova_forma = st.selectbox("Forma Pagamento", formas, index=index_forma)
 
                         status_opcoes = ["Pendente", "Pago"]
-                        if p['status_pagamento'].capitalize() not in status_opcoes:
-                            index_status = 0
-                        else:
-                            index_status = status_opcoes.index(p['status_pagamento'].capitalize())
+                        index_status = status_opcoes.index(p['status_pagamento']) if p['status_pagamento'] in status_opcoes else 0
                         novo_status = st.selectbox("Status", status_opcoes, index=index_status)
 
                         novo_funcionario = st.text_input("Funcionário", p['funcionario'])
                         nova_data_postagem = st.date_input("Data Postagem", pd.to_datetime(p['data_postagem']).date())
-                        if novo_status == "Pago":
-                            nova_data_pagamento = st.date_input("Data Pagamento", pd.to_datetime(p['data_pagamento']).date() if p['data_pagamento'] else datetime.today())
-                        else:
-                            nova_data_pagamento = ""
 
-                        # Botão de envio do formulário
+                        # Data pagamento só se status for Pago
+                        if novo_status == "Pago":
+                            nova_data_pagamento = st.date_input(
+                                "Data Pagamento",
+                                pd.to_datetime(p['data_pagamento']).date() if p['data_pagamento'] else datetime.today()
+                            )
+                        else:
+                            nova_data_pagamento = None
+
+                        # Botão de salvar alterações
                         salvar_btn = st.form_submit_button("💾 Salvar Alterações")
                         if salvar_btn:
                             novos_dados = (
                                 novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
                                 nova_forma, novo_status, novo_funcionario,
-                                str(nova_data_postagem), str(nova_data_pagamento)
+                                str(nova_data_postagem), str(nova_data_pagamento) if nova_data_pagamento else ""
                             )
                             db.editar_postagem(p["id"], novos_dados)
                             st.success("✅ Postagem atualizada com sucesso!")
-                    # Botão para excluir
-                        if st.button("🗑️ Excluir Postagem", key=f"excluir_{p['id']}"):
-                            db.excluir_postagem(p['id'])
-                            st.success(f"Postagem {p['codigo']} excluída com sucesso!")
+
+                    # Botão de exclusão fora do form
+                    if st.button("🗑️ Excluir Postagem", key=f"excluir_{p['id']}"):
+                        db.excluir_postagem(p['id'])
+                        st.success(f"Postagem {p['codigo']} excluída com sucesso!")
                 else:
                     st.caption("🔒 Somente administradores podem editar postagens.")
 
@@ -213,6 +210,31 @@ elif opcao == "Fechamento Diário":
                 st.download_button("Baixar PDF", f, file_name=nome_pdf)
         else:
             st.info("Nenhuma postagem para gerar PDF.")
+            
+# -------------------------- GUIA --------------------
+if opcao == "Guia":
+    st.header("📘 Guia de Utilização do Sistema")
+    st.markdown("Selecione o PDF que deseja gerar e baixar:")
+
+    from guia_utilizacao import gerar_pdf_guia_atendentes
+    from guia_visual import gerar_pdf_guia_admin
+
+    # Dicionário com funções que geram o PDF
+    guias = {
+        "Guia Atendentes": gerar_pdf_guia_atendentes,
+        "Guia Administradores": gerar_pdf_guia_admin
+    }
+
+    for nome, func_gerar in guias.items():
+        if st.button(f"📄 Gerar e Baixar {nome}"):
+            # Chama a função que retorna o PDF em bytes
+            pdf_bytes = func_gerar()  # Supondo que a função retorne um objeto bytes ou BytesIO
+            st.download_button(
+                label=f"📥 Baixar {nome}",
+                data=pdf_bytes,
+                file_name=f"{nome}.pdf",
+                mime="application/pdf"
+            )
 
 # ---------------- GERENCIAR USUÁRIOS ----------------
 elif opcao == "Gerenciar Usuários" and admin:
