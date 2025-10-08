@@ -37,7 +37,7 @@ if not st.session_state["logado"]:
 
 # ---------------- Menu Lateral ----------------
 usuario = st.session_state["usuario"]
-admin = usuario["tipo"] == "admin"
+admin = bool(usuario.get("is_admin", 0))
 
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
 opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Pagamentos Pendentes", "Fechamento Diário"]
@@ -49,9 +49,8 @@ opcao = st.sidebar.radio("Navegação", opcoes)
 if st.sidebar.button("🚪 Sair"):
     st.session_state["logado"] = False
     st.session_state["usuario"] = None
-    st.experimental_set_query_params()
-    st.session_state.clear()
-    st.stop()
+    st.query_params.clear()  # Atualizado (em vez de experimental_set_query_params)
+    st.rerun()
 
 # ---------------- DASHBOARD ----------------
 if opcao == "Dashboard":

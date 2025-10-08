@@ -46,8 +46,8 @@ st.markdown("""
             background-color: #005CA9;
             color: white;
         }
-    </style>
-""", unsafe_allow_html=True)
+        </style>
+        """, unsafe_allow_html=True)
 
 # ------------------- Funções auxiliares -------------------
 def carregar_postagens():
