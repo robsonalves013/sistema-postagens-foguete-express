@@ -64,11 +64,20 @@ elif opcao == "Cadastrar Postagem":
         c1, c2 = st.columns(2)
         posto = c1.text_input("Posto")
         remetente = c2.text_input("Remetente")
+
         codigo = st.text_input("Código de Rastreamento")
-        tipo = st.selectbox("Tipo", ["PAC", "SEDEX"])
+
+        tipos = ["PAC", "SEDEX"]
+        tipo = st.selectbox("Tipo", tipos)
+
         valor = st.number_input("Valor (R$)", min_value=0.0, step=0.01)
-        forma_pagamento = st.selectbox("Forma de Pagamento", ["PIX", "Dinheiro", "Cartão"])
-        status_pagamento = st.selectbox("Status do Pagamento", ["Pendente", "Pago"])
+
+        formas = ["PIX", "Dinheiro", "Cartão"]
+        forma_pagamento = st.selectbox("Forma de Pagamento", formas)
+
+        status_opcoes = ["Pendente", "Pago"]
+        status_pagamento = st.selectbox("Status do Pagamento", status_opcoes)
+
         funcionario = st.text_input("Funcionário")
         data_postagem = st.date_input("Data da Postagem", datetime.today())
         data_pagamento = st.date_input("Data do Pagamento", datetime.today())
@@ -76,16 +85,25 @@ elif opcao == "Cadastrar Postagem":
         cadastrar_btn = st.form_submit_button("💾 Cadastrar")
 
         if cadastrar_btn:
+            # Verificar duplicidade do código
             if db.codigo_existe(codigo):
                 st.error("❌ Código de rastreio já cadastrado.")
             else:
                 dados = (
-                    posto, remetente, codigo, tipo, valor, forma_pagamento,
-                    status_pagamento, funcionario, str(data_postagem), str(data_pagamento)
+                    posto,
+                    remetente,
+                    codigo,
+                    tipo,
+                    valor,
+                    forma_pagamento,
+                    status_pagamento,
+                    funcionario,
+                    str(data_postagem),
+                    str(data_pagamento)
                 )
                 db.inserir_postagem(dados)
                 st.success("✅ Postagem cadastrada com sucesso!")
-
+                
 # ---------------- LISTAR POSTAGENS ----------------
 elif opcao == "Listar Postagens":
     st.header("📋 Lista de Postagens")
@@ -118,7 +136,7 @@ elif opcao == "Listar Postagens":
                         novo_remetente = st.text_input("Remetente", p['remetente'])
                         novo_codigo = st.text_input("Código", p['codigo'])
 
-                        tipos = ["Carta", "Encomenda", "Sedex"]
+                        tipos = ["PAC", "Encomenda", "SEDEX"]
                         if p['tipo'].capitalize() not in tipos:
                             index_tipo = 0
                         else:
