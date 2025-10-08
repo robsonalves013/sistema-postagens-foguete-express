@@ -65,7 +65,7 @@ elif opcao == "Cadastrar Postagem":
         posto = c1.text_input("Posto")
         remetente = c2.text_input("Remetente")
         codigo = st.text_input("Código de Rastreamento")
-        tipo = st.selectbox("Tipo", ["Carta", "Encomenda", "Sedex"])
+        tipo = st.selectbox("Tipo", ["PAC", "SEDEX"])
         valor = st.number_input("Valor (R$)", min_value=0.0, step=0.01)
         forma_pagamento = st.selectbox("Forma de Pagamento", ["Pix", "Dinheiro", "Cartão"])
         status_pagamento = st.selectbox("Status do Pagamento", ["Pendente", "Pago"])
@@ -114,8 +114,8 @@ elif opcao == "Listar Postagens":
                         novo_posto = st.text_input("Posto", p['posto'])
                         novo_remetente = st.text_input("Remetente", p['remetente'])
                         novo_codigo = st.text_input("Código", p['codigo'])
-                        novo_tipo = st.selectbox("Tipo", ["Carta", "Encomenda", "Sedex"],
-                                                 index=["Carta", "Encomenda", "Sedex"].index(p['tipo']))
+                        novo_tipo = st.selectbox("Tipo", ["PAC", "SEDEX"],
+                                                 index=["PAC", "SEDEX"].index(p['tipo']))
                         novo_valor = st.number_input("Valor (R$)", value=p['valor'])
                         nova_forma = st.selectbox("Forma Pagamento", ["Pix", "Dinheiro", "Cartão"],
                                                   index=["Pix", "Dinheiro", "Cartão"].index(p['forma_pagamento']))
