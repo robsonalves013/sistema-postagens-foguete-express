@@ -31,7 +31,7 @@ if not st.session_state["logado"]:
                 st.session_state["logado"] = True
                 st.session_state["usuario"] = user
                 st.success("Login realizado com sucesso!")
-                st.experimental_rerun()  # Força atualização da página
+                  # Força atualização da página
             else:
                 st.error("Usuário ou senha incorretos.")
 
@@ -53,7 +53,7 @@ else:
     if st.sidebar.button("Sair"):
         st.session_state["logado"] = False
         st.session_state["usuario"] = None
-        st.experimental_rerun()  # Força atualizar para tela de login
+          # Força atualizar para tela de login
 
     # ---------------- DASHBOARD ----------------
     if opcao == "Dashboard":
@@ -79,7 +79,7 @@ else:
                          status_pagamento, funcionario, data_postagem, data_pagamento)
                 db.adicionar_postagem(dados)
                 st.success("Postagem cadastrada com sucesso!")
-                st.experimental_rerun()
+                
 
     # ---------------- LISTAR POSTAGENS ----------------
     elif opcao == "Listar Postagens":
@@ -118,7 +118,7 @@ else:
                         data_atual = datetime.now().strftime("%d/%m/%Y")
                         db.atualizar_pagamento(p['id'], "Pago", data_atual)
                         st.success(f"Pagamento da postagem {p['codigo']} marcado como pago em {data_atual}!")
-                        st.experimental_rerun()
+                        
 
     # ---------------- FECHAMENTO DIÁRIO ----------------
     elif opcao == "Fechamento Diário":
@@ -147,7 +147,7 @@ else:
                 try:
                     db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
                     st.success("Usuário criado com sucesso!")
-                    st.experimental_rerun()
+                    
                 except Exception as e:
                     st.error(f"Erro ao criar usuário: {e}")
 
@@ -166,12 +166,12 @@ else:
                     if st.button("💾 Salvar Alterações", key=f"salvar_{u['id']}"):
                         db.atualizar_usuario(u['id'], novo_nome, nova_senha if nova_senha else None, int(novo_admin))
                         st.success("Usuário atualizado com sucesso!")
-                        st.experimental_rerun()
+                        
                 with col2:
                     if st.button("🗑️ Excluir Usuário", key=f"del_{u['id']}"):
                         db.excluir_usuario(u['id'])
                         st.warning("Usuário excluído com sucesso!")
-                        st.experimental_rerun()
+                        
 
     # ---------------- RELATÓRIO MENSAL ----------------
     elif opcao == "Relatório Mensal" and admin:
