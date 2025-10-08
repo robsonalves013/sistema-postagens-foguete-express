@@ -74,33 +74,45 @@ else:
             data_postagem = datetime.now().strftime("%d/%m/%Y")
             data_pagamento = st.date_input("Data de Pagamento (opcional)").strftime("%d/%m/%Y")
             
-            if st.form_submit_button("Salvar"):
+            if st.button("Salvar"):
                 dados = (posto, remetente, codigo, tipo, valor, forma_pagamento,
-                         status_pagamento, funcionario, data_postagem, data_pagamento)
-                db.adicionar_postagem(dados)
-                st.success("Postagem cadastrada com sucesso!")
+                        status_pagamento, funcionario, data_postagem, data_pagamento)
+                try:
+                    db.adicionar_postagem(dados)
+                    st.success("✅ Postagem cadastrada com sucesso!")
+                except ValueError as e:
+                    st.error(f"❌ {e}")
+                except Exception as e:
+                    st.error(f"Erro ao cadastrar postagem: {e}")
+
                 
 
     # ---------------- LISTAR POSTAGENS ----------------
     elif opcao == "Listar Postagens":
-        st.header("📋 Lista de Postagens")
-        st_autorefresh(interval=5000, key="refresher")
-        postagens = db.listar_postagens()
-        if postagens:
-            for p in postagens:
-                with st.expander(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}"):
-                    st.write(f"Posto: {p['posto']}")
-                    st.write(f"Remetente: {p['remetente']}")
-                    st.write(f"Código: {p['codigo']}")
-                    st.write(f"Tipo: {p['tipo']}")
-                    st.write(f"Valor: R$ {p['valor']:.2f}")
-                    st.write(f"Forma de Pagamento: {p['forma_pagamento']}")
-                    st.write(f"Status: {p['status_pagamento']}")
-                    st.write(f"Funcionário: {p['funcionario']}")
-                    st.write(f"Data Postagem: {p['data_postagem']}")
-                    st.write(f"Data Pagamento: {p['data_pagamento']}")
-        else:
-            st.info("Nenhuma postagem cadastrada.")
+    st.header("📋 Lista de Postagens")
+    st_autorefresh(interval=5000, key="refresher")
+    postagens = db.listar_postagens()
+    if postagens:
+        for p in postagens:
+            with st.expander(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}"):
+                st.write(f"Posto: {p['posto']}")
+                st.write(f"Remetente: {p['remetente']}")
+                st.write(f"Código: {p['codigo']}")
+                st.write(f"Tipo: {p['tipo']}")
+                st.write(f"Valor: R$ {p['valor']:.2f}")
+                st.write(f"Forma de Pagamento: {p['forma_pagamento']}")
+                st.write(f"Status: {p['status_pagamento']}")
+                st.write(f"Funcionário: {p['funcionario']}")
+                st.write(f"Data Postagem: {p['data_postagem']}")
+                st.write(f"Data Pagamento: {p['data_pagamento']}")
+
+                # Somente admin pode editar
+                if admin:
+                    if st.button("✏️ Editar", key=f"editar_{p['id']}"):
+                        st.warning("Função de edição disponível apenas para administradores (em desenvolvimento).")
+    else:
+        st.info("Nenhuma postagem cadastrada.")
+
 
     # ---------------- PAGAMENTOS PENDENTES ----------------
     elif opcao == "Pagamentos Pendentes":

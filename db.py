@@ -109,16 +109,20 @@ def resetar_senha(usuario, nova_senha):
 
 # ------------------- Postagens -------------------
 def adicionar_postagem(dados):
-    """Adiciona uma nova postagem ao sistema."""
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO postagens
-                (posto, remetente, codigo, tipo, valor, forma_pagamento,
-                status_pagamento, funcionario, data_postagem, data_pagamento)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """, dados)
-        conn.commit()
+    posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento = dados
+
+    if codigo_existe(codigo):
+        raise ValueError("Código de rastreio já cadastrado.")
+
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO postagens (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento))
+    conn.commit()
+    conn.close()
+
 
 def listar_postagens():
     """Lista todas as postagens registradas (mais recentes primeiro)."""
@@ -171,3 +175,12 @@ def listar_postagens_mensal(mes, ano, filtro_posto=None, filtro_tipo=None, filtr
             query += " ORDER BY id DESC"
             cur.execute(query, params)
             return cur.fetchall()
+        
+def codigo_existe(codigo):
+    conn = conectar()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM postagens WHERE codigo = ?", (codigo,))
+    existe = cursor.fetchone()[0] > 0
+    conn.close()
+    return existe
+
