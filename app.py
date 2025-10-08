@@ -1,7 +1,6 @@
 # app.py
 import streamlit as st
 from datetime import datetime
-import pandas as pd
 import db
 from utils import gerar_pdf, gerar_relatorio_mensal
 from streamlit_autorefresh import st_autorefresh
@@ -16,12 +15,6 @@ if "logado" not in st.session_state:
     st.session_state["logado"] = False
 if "usuario" not in st.session_state:
     st.session_state["usuario"] = None
-if "rerun" not in st.session_state:
-    st.session_state["rerun"] = False
-
-if st.session_state.get("rerun"):
-    st.session_state["rerun"] = False
-    st.experimental_rerun()
 
 # ---------------- Tela de Login ----------------
 if not st.session_state["logado"]:
@@ -35,7 +28,6 @@ if not st.session_state["logado"]:
             st.session_state["logado"] = True
             st.session_state["usuario"] = user
             st.success("Login realizado com sucesso!")
-            st.session_state["rerun"] = True
         else:
             st.error("Usuário ou senha incorretos.")
 
@@ -57,7 +49,6 @@ else:
     if st.sidebar.button("Sair"):
         st.session_state["logado"] = False
         st.session_state["usuario"] = None
-        st.session_state["rerun"] = True
 
     # ---------------- DASHBOARD ----------------
     if opcao == "Dashboard":
@@ -82,7 +73,6 @@ else:
                      status_pagamento, funcionario, data_postagem, data_pagamento)
             db.adicionar_postagem(dados)
             st.success("Postagem cadastrada com sucesso!")
-            st.session_state["rerun"] = True
 
     # ---------------- LISTAR POSTAGENS ----------------
     elif opcao == "Listar Postagens":
@@ -121,7 +111,6 @@ else:
                         data_atual = datetime.now().strftime("%d/%m/%Y")
                         db.atualizar_pagamento(p['id'], "Pago", data_atual)
                         st.success(f"Pagamento da postagem {p['codigo']} marcado como pago em {data_atual}!")
-                        st.session_state["rerun"] = True
 
     # ---------------- FECHAMENTO DIÁRIO ----------------
     elif opcao == "Fechamento Diário":
@@ -149,7 +138,6 @@ else:
             try:
                 db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
                 st.success("Usuário criado com sucesso!")
-                st.session_state["rerun"] = True
             except Exception as e:
                 st.error(f"Erro ao criar usuário: {e}")
 
@@ -168,12 +156,10 @@ else:
                     if st.button("💾 Salvar Alterações", key=f"salvar_{u['id']}"):
                         db.atualizar_usuario(u['id'], novo_nome, nova_senha if nova_senha else None, int(novo_admin))
                         st.success("Usuário atualizado com sucesso!")
-                        st.session_state["rerun"] = True
                 with col2:
                     if st.button("🗑️ Excluir Usuário", key=f"del_{u['id']}"):
                         db.excluir_usuario(u['id'])
                         st.warning("Usuário excluído com sucesso!")
-                        st.session_state["rerun"] = True
 
     # ---------------- RELATÓRIO MENSAL ----------------
     elif opcao == "Relatório Mensal" and admin:
