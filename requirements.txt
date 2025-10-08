@@ -1,7 +1,7 @@
-streamlit
-psycopg[binary]
-bcrypt
-pandas
-plotly
-fpdf
-streamlit-autorefresh
+streamlit==1.26.0
+psycopg[binary]==3.1.8
+bcrypt==4.1.0
+fpdf==1.7.2
+pandas==2.1.1
+plotly==5.16.1
+streamlit-autorefresh==0.1.1

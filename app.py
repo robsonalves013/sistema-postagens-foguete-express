@@ -4,7 +4,7 @@ from datetime import datetime
 import db
 from utils import gerar_pdf, gerar_relatorio_mensal
 from streamlit_autorefresh import st_autorefresh
-from dashboard import mostrar_dashboard  # Importa o dashboard modularizado
+from dashboard import mostrar_dashboard  # Dashboard modularizado
 
 # Inicializa banco
 db.criar_tabelas()
@@ -121,9 +121,13 @@ else:
         st.header("🧾 Fechamento Diário")
         postagens = db.listar_postagens()
         if st.button("Gerar PDF"):
-            gerar_pdf(postagens)
-            with open("fechamento.pdf", "rb") as f:
-                st.download_button("Baixar PDF", f, file_name="fechamento.pdf")
+            if not postagens:
+                st.warning("Nenhuma postagem para gerar o PDF.")
+            else:
+                nome_pdf = f"fechamento_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                gerar_pdf(postagens, nome_pdf)
+                with open(nome_pdf, "rb") as f:
+                    st.download_button("Baixar PDF", f, file_name=nome_pdf)
         st.info("O relatório incluirá todas as postagens do dia.")
 
     # ----------------- GERENCIAR USUÁRIOS -----------------
@@ -135,8 +139,15 @@ else:
     # ----------------- RELATÓRIO MENSAL -----------------
     elif opcao == "Relatório Mensal" and admin:
         st.header("📊 Relatório Mensal")
-        # Mantido como no seu código
-        # ...
+        postagens = db.listar_postagens_mensal(datetime.now().month, datetime.now().year)
+        if st.button("Gerar PDF"):
+            if not postagens:
+                st.warning("Nenhuma postagem para gerar o PDF.")
+            else:
+                nome_pdf = f"relatorio_mensal_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                gerar_relatorio_mensal(postagens, nome_pdf)
+                with open(nome_pdf, "rb") as f:
+                    st.download_button("Baixar PDF", f, file_name=nome_pdf)
 
     st.markdown("---")
     st.caption("Sistema de Postagens - Foguete Express 🚀 desenvolvido por RobTech Service")
