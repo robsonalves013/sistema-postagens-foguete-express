@@ -3,12 +3,13 @@ from fpdf import FPDF
 from datetime import datetime
 
 # ---------- PDF fechamento diário ----------
-def gerar_pdf(postagens):
+def gerar_pdf(postagens, nome_arquivo=None):
     if not postagens:
         return None
 
-    data_hoje = datetime.now().strftime("%d-%m-%Y")
-    nome_arquivo = f"fechamento_{data_hoje}.pdf"
+    if not nome_arquivo:
+        data_hoje = datetime.now().strftime("%d-%m-%Y")
+        nome_arquivo = f"fechamento_{data_hoje}.pdf"
 
     pdf = FPDF()
     pdf.add_page()
@@ -42,12 +43,13 @@ def gerar_pdf(postagens):
 
 
 # ---------- Relatório mensal ----------
-def gerar_relatorio_mensal(postagens):
+def gerar_relatorio_mensal(postagens, nome_arquivo=None):
     if not postagens:
         return None
 
-    data_hoje = datetime.now().strftime("%d-%m-%Y")
-    nome_arquivo = f"relatorio_mensal_{data_hoje}.pdf"
+    if not nome_arquivo:
+        data_hoje = datetime.now().strftime("%d-%m-%Y")
+        nome_arquivo = f"relatorio_mensal_{data_hoje}.pdf"
 
     pdf = FPDF()
     pdf.add_page()
