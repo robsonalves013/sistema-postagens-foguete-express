@@ -1,9 +1,8 @@
-# app.py
 import streamlit as st
+import pandas as pd
 from datetime import datetime
 import db
 from utils import gerar_pdf, gerar_relatorio_mensal
-from streamlit_autorefresh import st_autorefresh
 from dashboard import mostrar_dashboard  # Dashboard modularizado
 
 # ---------------- Inicializa banco ----------------
@@ -18,7 +17,7 @@ if "usuario" not in st.session_state:
 
 # ---------------- Tela de Login ----------------
 if not st.session_state["logado"]:
-    st.title("📦 Sistema de Postagens - Login")
+    st.title("📦 Sistema de Postagens Foguete Express - Login")
     with st.form("login_form"):
         usuario = st.text_input("Usuário")
         senha = st.text_input("Senha", type="password")
@@ -30,6 +29,8 @@ if not st.session_state["logado"]:
                 st.session_state["logado"] = True
                 st.session_state["usuario"] = user
                 st.success("✅ Login realizado com sucesso!")
+                st.experimental_set_query_params(page="dashboard")
+                st.session_state["pagina"] = "Dashboard"
             else:
                 st.error("❌ Usuário ou senha incorretos.")
     st.stop()
@@ -39,35 +40,22 @@ usuario = st.session_state["usuario"]
 admin = usuario["tipo"] == "admin"
 
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
-opcao = st.sidebar.radio(
-    "Navegação",
-    ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Gerenciar Usuários" if admin else None],
-)
+opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Pagamentos Pendentes", "Fechamento Diário"]
+if admin:
+    opcoes.extend(["Gerenciar Usuários", "Relatório Mensal"])
+
+opcao = st.sidebar.radio("Navegação", opcoes)
+
 if st.sidebar.button("🚪 Sair"):
     st.session_state["logado"] = False
     st.session_state["usuario"] = None
     st.experimental_set_query_params()
-    st.rerun()
+    st.session_state.clear()
+    st.stop()
 
 # ---------------- DASHBOARD ----------------
 if opcao == "Dashboard":
-    st.header("📊 Dashboard - Resumo das Postagens")
-
-    postagens = db.listar_postagens()
-    if not postagens:
-        st.info("Nenhuma postagem cadastrada ainda.")
-    else:
-        df = pd.DataFrame(postagens)
-        total = df["valor"].sum()
-        pendentes = len(df[df["status_pagamento"] == "Pendente"])
-        pagas = len(df[df["status_pagamento"] == "Pago"])
-
-        c1, c2, c3 = st.columns(3)
-        c1.metric("💰 Total em R$", f"{total:,.2f}")
-        c2.metric("📦 Pagas", pagas)
-        c3.metric("⌛ Pendentes", pendentes)
-
-        st.dataframe(df, use_container_width=True)
+    mostrar_dashboard()
 
 # ---------------- CADASTRAR POSTAGEM ----------------
 elif opcao == "Cadastrar Postagem":
@@ -77,7 +65,6 @@ elif opcao == "Cadastrar Postagem":
         c1, c2 = st.columns(2)
         posto = c1.text_input("Posto")
         remetente = c2.text_input("Remetente")
-
         codigo = st.text_input("Código de Rastreamento")
         tipo = st.selectbox("Tipo", ["Carta", "Encomenda", "Sedex"])
         valor = st.number_input("Valor (R$)", min_value=0.0, step=0.01)
@@ -90,7 +77,6 @@ elif opcao == "Cadastrar Postagem":
         cadastrar_btn = st.form_submit_button("💾 Cadastrar")
 
         if cadastrar_btn:
-            # Verificar duplicidade do código
             if db.codigo_existe(codigo):
                 st.error("❌ Código de rastreio já cadastrado.")
             else:
@@ -151,7 +137,6 @@ elif opcao == "Listar Postagens":
                 else:
                     st.caption("🔒 Somente administradores podem editar postagens.")
 
-
 # ---------------- PAGAMENTOS PENDENTES ----------------
 elif opcao == "Pagamentos Pendentes":
     st.header("💰 Pagamentos Pendentes")
@@ -169,7 +154,6 @@ elif opcao == "Pagamentos Pendentes":
                     db.atualizar_pagamento(p['id'], "Pago", data_atual)
                     st.success(f"Pagamento da postagem {p['codigo']} marcado como pago em {data_atual}!")
 
-
 # ---------------- FECHAMENTO DIÁRIO ----------------
 elif opcao == "Fechamento Diário":
     st.header("🧾 Fechamento Diário")
@@ -182,12 +166,11 @@ elif opcao == "Fechamento Diário":
         else:
             st.info("Nenhuma postagem para gerar PDF.")
 
-
 # ---------------- GERENCIAR USUÁRIOS ----------------
 elif opcao == "Gerenciar Usuários" and admin:
     st.header("👥 Gerenciar Usuários")
 
-        # --- Cadastrar Novo Usuário ---
+    # --- Cadastrar Novo Usuário ---
     st.subheader("Cadastrar Novo Usuário")
     with st.form("cadastro_usuario"):
         nome = st.text_input("Nome Completo", key="novo_nome")
@@ -198,12 +181,10 @@ elif opcao == "Gerenciar Usuários" and admin:
             try:
                 db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
                 st.success("Usuário criado com sucesso!")
-                    
             except Exception as e:
                 st.error(f"Erro ao criar usuário: {e}")
 
-    st.markdown("---")
-# --- Editar / Excluir Usuários ---
+    st.divider()
     st.subheader("Editar / Excluir Usuários")
     usuarios = db.listar_usuarios()
     for u in usuarios:
@@ -213,43 +194,41 @@ elif opcao == "Gerenciar Usuários" and admin:
             nova_senha = st.text_input("Nova senha (opcional)", type="password", key=f"senha_{u['id']}")
 
             col1, col2 = st.columns(2)
-        with col1:
-            if st.button("💾 Salvar Alterações", key=f"salvar_{u['id']}"):
-                db.atualizar_usuario(u['id'], novo_nome, nova_senha if nova_senha else None, int(novo_admin))
-                st.success("Usuário atualizado com sucesso!")
-                
-        with col2:
-            if st.button("🗑️ Excluir Usuário", key=f"del_{u['id']}"):
-                db.excluir_usuario(u['id'])
-                st.warning("Usuário excluído com sucesso!")
-                    
+            with col1:
+                if st.button("💾 Salvar Alterações", key=f"salvar_{u['id']}"):
+                    db.atualizar_usuario(u['id'], novo_nome, nova_senha if nova_senha else None, int(novo_admin))
+                    st.success("Usuário atualizado com sucesso!")
+            with col2:
+                if st.button("🗑️ Excluir Usuário", key=f"del_{u['id']}"):
+                    db.excluir_usuario(u['id'])
+                    st.warning("Usuário excluído com sucesso!")
 
 # ---------------- RELATÓRIO MENSAL ----------------
 elif opcao == "Relatório Mensal" and admin:
     st.header("📊 Relatório Mensal")
     col1, col2 = st.columns(2)
-        with col1:
-            mes = st.number_input("Mês", min_value=1, max_value=12, value=datetime.now().month)
-        with col2:
-            ano = st.number_input("Ano", min_value=2000, max_value=2100, value=datetime.now().year)
+    with col1:
+        mes = st.number_input("Mês", min_value=1, max_value=12, value=datetime.now().month)
+    with col2:
+        ano = st.number_input("Ano", min_value=2000, max_value=2100, value=datetime.now().year)
 
-        posto = st.selectbox("Posto (opcional)", ["Todos", "Shopping Bolivia", "Hotel Family"])
-        tipo = st.selectbox("Tipo de postagem (opcional)", ["Todos", "PAC", "SEDEX"])
-        forma = st.selectbox("Forma de pagamento (opcional)", ["Todos", "Dinheiro", "PIX"])
+    posto = st.selectbox("Posto (opcional)", ["Todos", "Shopping Bolivia", "Hotel Family"])
+    tipo = st.selectbox("Tipo de postagem (opcional)", ["Todos", "PAC", "SEDEX"])
+    forma = st.selectbox("Forma de pagamento (opcional)", ["Todos", "Dinheiro", "PIX"])
 
-        filtro_posto = None if posto == "Todos" else posto
-        filtro_tipo = None if tipo == "Todos" else tipo
-        filtro_forma = None if forma == "Todos" else forma
+    filtro_posto = None if posto == "Todos" else posto
+    filtro_tipo = None if tipo == "Todos" else tipo
+    filtro_forma = None if forma == "Todos" else forma
 
-        if st.button("Gerar Relatório"):
-            postagens = db.listar_postagens_mensal(mes, ano, filtro_posto, filtro_tipo, filtro_forma)
-            if postagens:
-                nome_pdf = gerar_relatorio_mensal(postagens)
-                if nome_pdf:
-                    with open(nome_pdf, "rb") as f:
-                        st.download_button("Baixar PDF", f, file_name=nome_pdf)
-            else:
-                st.info("Nenhuma postagem encontrada para os filtros selecionados.")
+    if st.button("Gerar Relatório"):
+        postagens = db.listar_postagens_mensal(mes, ano, filtro_posto, filtro_tipo, filtro_forma)
+        if postagens:
+            nome_pdf = gerar_relatorio_mensal(postagens)
+            if nome_pdf:
+                with open(nome_pdf, "rb") as f:
+                    st.download_button("Baixar PDF", f, file_name=nome_pdf)
+        else:
+            st.info("Nenhuma postagem encontrada para os filtros selecionados.")
 
     st.markdown("---")
     st.caption("Sistema de Postagens - Foguete Express 🚀 desenvolvido por RobTech Service")
