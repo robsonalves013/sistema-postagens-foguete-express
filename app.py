@@ -19,17 +19,21 @@ if "usuario" not in st.session_state:
 # ---------------- Tela de Login ----------------
 if not st.session_state["logado"]:
     st.title("📦 Sistema de Postagens - Login")
-    usuario = st.text_input("Usuário")
-    senha = st.text_input("Senha", type="password")
     
-    if st.button("Entrar"):
-        user = db.autenticar(usuario, senha)
-        if user:
-            st.session_state["logado"] = True
-            st.session_state["usuario"] = user
-            st.success("Login realizado com sucesso!")
-        else:
-            st.error("Usuário ou senha incorretos.")
+    with st.form("login_form"):
+        usuario = st.text_input("Usuário")
+        senha = st.text_input("Senha", type="password")
+        submitted = st.form_submit_button("Entrar")
+        
+        if submitted:
+            user = db.autenticar(usuario, senha)
+            if user:
+                st.session_state["logado"] = True
+                st.session_state["usuario"] = user
+                st.success("Login realizado com sucesso!")
+                st.experimental_rerun()  # Força atualização da página
+            else:
+                st.error("Usuário ou senha incorretos.")
 
 # ---------------- Tela Principal ----------------
 else:
@@ -49,6 +53,7 @@ else:
     if st.sidebar.button("Sair"):
         st.session_state["logado"] = False
         st.session_state["usuario"] = None
+        st.experimental_rerun()  # Força atualizar para tela de login
 
     # ---------------- DASHBOARD ----------------
     if opcao == "Dashboard":
@@ -57,22 +62,24 @@ else:
     # ---------------- CADASTRAR POSTAGEM ----------------
     elif opcao == "Cadastrar Postagem":
         st.header("📮 Nova Postagem")
-        posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"])
-        remetente = st.text_input("Remetente")
-        codigo = st.text_input("Código de Rastreamento")
-        tipo = st.selectbox("Tipo de Postagem", ["PAC", "SEDEX"])
-        valor = st.number_input("Valor (R$)", min_value=0.0, step=0.5)
-        forma_pagamento = st.selectbox("Forma de Pagamento", ["Dinheiro", "PIX"])
-        status_pagamento = st.selectbox("Status", ["Pago", "Pendente"])
-        funcionario = st.selectbox("Funcionário", ["Jair", "Yuri"])
-        data_postagem = datetime.now().strftime("%d/%m/%Y")
-        data_pagamento = st.date_input("Data de Pagamento (opcional)").strftime("%d/%m/%Y")
-
-        if st.button("Salvar"):
-            dados = (posto, remetente, codigo, tipo, valor, forma_pagamento,
-                     status_pagamento, funcionario, data_postagem, data_pagamento)
-            db.adicionar_postagem(dados)
-            st.success("Postagem cadastrada com sucesso!")
+        with st.form("cadastro_postagem"):
+            posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"])
+            remetente = st.text_input("Remetente")
+            codigo = st.text_input("Código de Rastreamento")
+            tipo = st.selectbox("Tipo de Postagem", ["PAC", "SEDEX"])
+            valor = st.number_input("Valor (R$)", min_value=0.0, step=0.5)
+            forma_pagamento = st.selectbox("Forma de Pagamento", ["Dinheiro", "PIX"])
+            status_pagamento = st.selectbox("Status", ["Pago", "Pendente"])
+            funcionario = st.selectbox("Funcionário", ["Jair", "Yuri"])
+            data_postagem = datetime.now().strftime("%d/%m/%Y")
+            data_pagamento = st.date_input("Data de Pagamento (opcional)").strftime("%d/%m/%Y")
+            
+            if st.form_submit_button("Salvar"):
+                dados = (posto, remetente, codigo, tipo, valor, forma_pagamento,
+                         status_pagamento, funcionario, data_postagem, data_pagamento)
+                db.adicionar_postagem(dados)
+                st.success("Postagem cadastrada com sucesso!")
+                st.experimental_rerun()
 
     # ---------------- LISTAR POSTAGENS ----------------
     elif opcao == "Listar Postagens":
@@ -111,17 +118,19 @@ else:
                         data_atual = datetime.now().strftime("%d/%m/%Y")
                         db.atualizar_pagamento(p['id'], "Pago", data_atual)
                         st.success(f"Pagamento da postagem {p['codigo']} marcado como pago em {data_atual}!")
+                        st.experimental_rerun()
 
     # ---------------- FECHAMENTO DIÁRIO ----------------
     elif opcao == "Fechamento Diário":
         st.header("🧾 Fechamento Diário")
         postagens = db.listar_postagens()
         if st.button("Gerar PDF"):
-            data_hoje = datetime.now().strftime("%d%m%Y")
-            gerar_pdf(postagens, f"fechamento_{data_hoje}.pdf")
-            with open(f"fechamento_{data_hoje}.pdf", "rb") as f:
-                st.download_button("Baixar PDF", f, file_name=f"fechamento_{data_hoje}.pdf")
-        st.info("O relatório incluirá todas as postagens do dia.")
+            nome_pdf = gerar_pdf(postagens)
+            if nome_pdf:
+                with open(nome_pdf, "rb") as f:
+                    st.download_button("Baixar PDF", f, file_name=nome_pdf)
+            else:
+                st.info("Nenhuma postagem para gerar PDF.")
 
     # ---------------- GERENCIAR USUÁRIOS ----------------
     elif opcao == "Gerenciar Usuários" and admin:
@@ -129,17 +138,18 @@ else:
 
         # --- Cadastrar Novo Usuário ---
         st.subheader("Cadastrar Novo Usuário")
-        nome = st.text_input("Nome Completo", key="novo_nome")
-        novo_usuario = st.text_input("Usuário (login)", key="novo_usuario")
-        nova_senha = st.text_input("Senha", type="password", key="nova_senha")
-        is_admin = st.checkbox("Administrador", key="novo_admin")
-
-        if st.button("Criar Usuário"):
-            try:
-                db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
-                st.success("Usuário criado com sucesso!")
-            except Exception as e:
-                st.error(f"Erro ao criar usuário: {e}")
+        with st.form("cadastro_usuario"):
+            nome = st.text_input("Nome Completo", key="novo_nome")
+            novo_usuario = st.text_input("Usuário (login)", key="novo_usuario")
+            nova_senha = st.text_input("Senha", type="password", key="nova_senha")
+            is_admin = st.checkbox("Administrador", key="novo_admin")
+            if st.form_submit_button("Criar Usuário"):
+                try:
+                    db.criar_usuario(nome, novo_usuario, nova_senha, int(is_admin))
+                    st.success("Usuário criado com sucesso!")
+                    st.experimental_rerun()
+                except Exception as e:
+                    st.error(f"Erro ao criar usuário: {e}")
 
         st.markdown("---")
         # --- Editar / Excluir Usuários ---
@@ -156,10 +166,12 @@ else:
                     if st.button("💾 Salvar Alterações", key=f"salvar_{u['id']}"):
                         db.atualizar_usuario(u['id'], novo_nome, nova_senha if nova_senha else None, int(novo_admin))
                         st.success("Usuário atualizado com sucesso!")
+                        st.experimental_rerun()
                 with col2:
                     if st.button("🗑️ Excluir Usuário", key=f"del_{u['id']}"):
                         db.excluir_usuario(u['id'])
                         st.warning("Usuário excluído com sucesso!")
+                        st.experimental_rerun()
 
     # ---------------- RELATÓRIO MENSAL ----------------
     elif opcao == "Relatório Mensal" and admin:
@@ -181,10 +193,10 @@ else:
         if st.button("Gerar Relatório"):
             postagens = db.listar_postagens_mensal(mes, ano, filtro_posto, filtro_tipo, filtro_forma)
             if postagens:
-                data_rel = datetime.now().strftime("%d%m%Y")
-                gerar_relatorio_mensal(postagens, f"relatorio_mensal_{data_rel}.pdf")
-                with open(f"relatorio_mensal_{data_rel}.pdf", "rb") as f:
-                    st.download_button("Baixar PDF", f, file_name=f"relatorio_mensal_{data_rel}.pdf")
+                nome_pdf = gerar_relatorio_mensal(postagens)
+                if nome_pdf:
+                    with open(nome_pdf, "rb") as f:
+                        st.download_button("Baixar PDF", f, file_name=nome_pdf)
             else:
                 st.info("Nenhuma postagem encontrada para os filtros selecionados.")
 

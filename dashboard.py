@@ -79,7 +79,7 @@ def filtrar_periodo(df, filtro):
 
 # ------------------- Interface principal -------------------
 def mostrar_dashboard():
-    st.title("📦 Painel de Controle - Correios")
+    st.title("📦 Painel de Controle - Foguete Express")
     st.markdown("Monitoramento de postagens por posto e tipo de serviço")
 
     # Filtro de período
