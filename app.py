@@ -227,7 +227,7 @@ elif opcao == "Gerenciar Usuários" and admin:
 # ---------------- RELATÓRIO MENSAL ----------------
 elif opcao == "Relatório Mensal" and admin:
     st.header("📊 Relatório Mensal")
-        col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
         with col1:
             mes = st.number_input("Mês", min_value=1, max_value=12, value=datetime.now().month)
         with col2:
