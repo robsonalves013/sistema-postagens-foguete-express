@@ -15,18 +15,19 @@ def mostrar_dashboard():
 
     df = pd.DataFrame(postagens)
 
-    # Normaliza coluna id para int64 para evitar problemas na exibição
+    # Certifica que a coluna 'observacao' existe no DataFrame
+    if "observacao" not in df.columns:
+        df["observacao"] = ""
+
     df['id'] = df['id'].astype('int64')
 
-    # Conversão de data para datetime com dayfirst e limpeza de strings
     df["data_postagem"] = pd.to_datetime(
         df["data_postagem"].str.strip(), dayfirst=True, errors="coerce"
     )
-    df = df.dropna(subset=["data_postagem"])  # remover datas inválidas
-    df["data_postagem"] = df["data_postagem"].dt.tz_localize(None)  # remove timezone
+    df = df.dropna(subset=["data_postagem"])
+    df["data_postagem"] = df["data_postagem"].dt.tz_localize(None)
 
     filtro = st.selectbox("Período", ["Diário", "Semanal", "Mensal"])
-
     hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
 
     if filtro == "Diário":
@@ -35,6 +36,10 @@ def mostrar_dashboard():
         dff = df[df["data_postagem"] >= hoje - pd.Timedelta(days=7)]
     else:
         dff = df[df["data_postagem"] >= hoje - pd.Timedelta(days=30)]
+
+    # Certifica que a coluna 'observacao' existe no DataFrame filtrado
+    if "observacao" not in dff.columns:
+        dff["observacao"] = ""
 
     st.metric("📬 Total postagens", len(dff))
     st.metric("⌛ Pendentes", len(dff[dff["status_pagamento"] == "Pendente"]))
