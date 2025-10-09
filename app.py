@@ -235,9 +235,11 @@ elif opcao == "Relatório Mensal" and admin:
     if st.button("Gerar Relatório"):
         postagens = db.listar_postagens_mensal(mes, ano, filtro_posto, filtro_tipo, filtro_forma)
         bytes_pdf, nome_pdf = gerar_relatorio_mensal(postagens)
-        if bytes_pdf:
-            st.download_button("📥 Baixar Relatório Mensal (PDF)", data=bytes_pdf, file_name=nome_pdf, mime="application/pdf")
+        postagens = db.listar_postagens()  # Ou a função que pega as postagens do mês filtradas
+        if not postagens:
+            st.info("❗ Não há postagens para gerar o relatório mensal.")
         else:
-            st.info("Nenhuma postagem para o relatório selecionado.")
+            bytes_pdf, nome_pdf = gerar_relatorio_mensal(postagens)
+            st.download_button("📥 Baixar Relatório Mensal (PDF)", data=bytes_pdf, file_name=nome_pdf, mime="application/pdf")
 st.markdown("---")
 st.caption("Sistema de Postagens - Foguete Express 🚀 desenvolvido por RobTech Service")
