@@ -14,6 +14,10 @@ def mostrar_dashboard():
         return
 
     df = pd.DataFrame(postagens)
+    st.write("Dados brutos das postagens (preview):")
+    st.write(df.head())
+    st.write("Tipos das colunas:")
+    st.write(df.dtypes)
 
     # Converter para datetime e remover linhas com datas inválidas
     df["data_postagem"] = pd.to_datetime(df["data_postagem"], format="%d/%m/%Y %H:%M:%S", errors="coerce")
