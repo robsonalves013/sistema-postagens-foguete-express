@@ -1,54 +1,51 @@
 # dashboard.py
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from datetime import datetime
 import db
 
 def mostrar_dashboard():
-    st.header("📊 Dashboard - Sistema de Postagens Foguete Express")
+    st.title("📊 Dashboard - Foguete Express")
 
-    # Carregar todas as postagens
     postagens = db.listar_postagens()
     if not postagens:
-        st.info("Nenhuma postagem registrada ainda.")
+        st.info("Nenhuma postagem cadastrada ainda.")
         return
 
-    # Converter para DataFrame para facilitar manipulação
     df = pd.DataFrame(postagens)
+    # Converter data_postagem para datetime, pode estar em vários formatos -> tenta vários
+    df["data_postagem"] = pd.to_datetime(df["data_postagem"], format="%d/%m/%Y %H:%M:%S", errors="coerce")
+    # Se houver strings sem hora, tenta formato curto
+    df["data_postagem"] = df["data_postagem"].fillna(pd.to_datetime(df["data_postagem"].astype(str), errors="coerce"))
 
-    # Converter valores numéricos e datas
-    df['valor'] = pd.to_numeric(df['valor'], errors='coerce').fillna(0.0)
-    df['data_postagem'] = pd.to_datetime(df['data_postagem'], format='%d/%m/%Y', errors='coerce')
+    filtro = st.radio("Período:", ["Diário", "Semanal", "Mensal"], horizontal=True)
+    hoje = datetime.now()
+    if filtro == "Diário":
+        dff = df[df["data_postagem"].dt.date == hoje.date()]
+    elif filtro == "Semanal":
+        semana = hoje.isocalendar().week
+        dff = df[df["data_postagem"].dt.isocalendar().week == semana]
+    else:
+        dff = df[(df["data_postagem"].dt.month == hoje.month) & (df["data_postagem"].dt.year == hoje.year)]
 
-    # ---------------- Métricas Gerais ----------------
-    total_postagens = len(df)
-    total_valor = df['valor'].sum()
-    total_pago = df[df['status_pagamento'] == "Pago"]['valor'].sum()
-    total_pendente = df[df['status_pagamento'] == "Pendente"]['valor'].sum()
+    st.metric("📬 Total postagens", len(dff))
+    st.metric("⌛ Pendentes", len(dff[dff["status_pagamento"] == "Pendente"]))
+    st.metric("💰 Valor total", f"R$ {dff['valor'].sum():,.2f}")
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("📦 Total Postagens", total_postagens)
-    col2.metric("💰 Valor Total (R$)", f"{total_valor:.2f}")
-    col3.metric("✅ Valor Pago (R$)", f"{total_pago:.2f}")
-    col4.metric("⏳ Valor Pendente (R$)", f"{total_pendente:.2f}")
+    # Gráfico por posto
+    if not dff.empty:
+        grouped = dff.groupby("posto").size().reset_index(name="quantidade")
+        fig = px.bar(grouped, x="posto", y="quantidade", text="quantidade", color="posto",
+                     color_discrete_sequence=["#005CA9", "#FFCC00"])
+        fig.update_layout(showlegend=False)
+        fig.update_traces(textposition="outside")
+        st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("---")
+        # Pizza por tipo
+        fig2 = px.pie(dff, names="tipo", title="Distribuição por tipo",
+                      color_discrete_sequence=["#005CA9", "#FFCC00", "#003366", "#FFD700"])
+        st.plotly_chart(fig2, use_container_width=True)
 
-    # ---------------- Gráficos ----------------
-    st.subheader("📈 Postagens por Status")
-    status_counts = df['status_pagamento'].value_counts()
-    st.bar_chart(status_counts)
-
-    st.subheader("🏢 Postagens por Posto")
-    posto_counts = df['posto'].value_counts()
-    st.bar_chart(posto_counts)
-
-    st.subheader("👷 Postagens por Funcionário")
-    if 'funcionario' in df.columns:
-        funcionario_counts = df['funcionario'].value_counts()
-        st.bar_chart(funcionario_counts)
-
-    # ---------------- Postagens Recentes ----------------
-    st.subheader("🕒 Últimas Postagens")
-    df_recentes = df.sort_values(by='data_postagem', ascending=False).head(10)
-    st.dataframe(df_recentes[['codigo', 'posto', 'remetente', 'tipo', 'valor', 'forma_pagamento', 'status_pagamento', 'funcionario', 'data_postagem', 'data_pagamento']])
+        st.subheader("Detalhamento")
+        st.dataframe(dff.sort_values("data_postagem", ascending=False), use_container_width=True)

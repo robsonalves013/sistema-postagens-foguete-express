@@ -4,7 +4,6 @@ from io import BytesIO
 
 class GuiaVisual(FPDF):
     def header(self):
-        # Cabeçalho colorido
         self.set_font("Arial", "B", 16)
         self.set_text_color(0, 51, 102)  # Azul escuro
         self.cell(0, 10, "📦 Guia de Utilização - Sistema de Postagens - Foguete Express", ln=True, align="C")
@@ -13,20 +12,21 @@ class GuiaVisual(FPDF):
 
     def section_title(self, numero, titulo):
         self.set_font("Arial", "B", 14)
-        self.set_text_color(0, 102, 0)  # Verde escuro
+        self.set_text_color(0, 102, 0)
         self.cell(0, 8, f"{numero} {titulo}", ln=True)
         self.ln(2)
         self.set_text_color(0, 0, 0)
-    
+
     def section_body(self, texto):
         self.set_font("Arial", size=12)
         self.multi_cell(0, 8, texto)
         self.ln(3)
-    
+
     def divider(self):
         self.set_draw_color(0, 102, 204)
         self.set_line_width(0.5)
-        self.line(10, self.get_y(), 200, self.get_y())
+        y = self.get_y()
+        self.line(10, y, 200, y)
         self.ln(3)
 
 def gerar_pdf_guia_atendente(nome_arquivo="guia_utilizacao.pdf"):
