@@ -1,4 +1,3 @@
-# guia_visual.py
 from fpdf import FPDF
 from io import BytesIO
 
@@ -6,7 +5,7 @@ class GuiaVisual(FPDF):
     def header(self):
         self.set_font("Arial", "B", 16)
         self.set_text_color(0, 51, 102)  # Azul escuro
-        self.cell(0, 10, "📦 Guia de Utilização - Sistema de Postagens - Foguete Express", ln=True, align="C")
+        self.cell(0, 10, "Guia de Utilização - Sistema de Postagens - Foguete Express", ln=True, align="C")
         self.ln(5)
         self.set_text_color(0, 0, 0)
 
@@ -40,8 +39,8 @@ def gerar_pdf_guia_atendente(nome_arquivo="guia_utilizacao.pdf"):
     )
     pdf.divider()
 
-    # 1️⃣ Login
-    pdf.section_title("1️⃣", "Login")
+    # 1 Login
+    pdf.section_title("1", "Login")
     pdf.section_body(
         "- Acesse o sistema usando seu usuário e senha.\n"
         "- Apenas usuários cadastrados podem acessar.\n"
@@ -49,30 +48,31 @@ def gerar_pdf_guia_atendente(nome_arquivo="guia_utilizacao.pdf"):
     )
     pdf.divider()
 
-    # 2️⃣ Menu Principal
-    pdf.section_title("2️⃣", "Menu Principal")
+    # 2 Menu Principal
+    pdf.section_title("2", "Menu Principal")
     pdf.section_body(
-        "- 📊 Dashboard: resumo das postagens, valores totais e status de pagamentos.\n"
-        "- 📝 Cadastrar Postagem: registre novas postagens.\n"
-        "- 📋 Listar Postagens: visualize todas as postagens cadastradas.\n"
-        "- 👥 Gerenciar Usuários: disponível apenas para administradores.\n"
-        "- 💰 Pagamentos Pendentes: marque postagens como pagas.\n"
-        "- 🧾 Fechamento Diário: gere PDF do fechamento diário.\n"
-        "- 📑 Relatório Mensal: gere PDF com filtros por mês, tipo e forma de pagamento."
+        "- Dashboard: resumo das postagens, valores totais e status de pagamentos.\n"
+        "- Cadastrar Postagem: registre novas postagens.\n"
+        "- Listar Postagens: visualize todas as postagens cadastradas.\n"
+        "- Gerenciar Usuários: disponível apenas para administradores.\n"
+        "- Pagamentos Pendentes: marque postagens como pagas.\n"
+        "- Fechamento Diário: gere PDF do fechamento diário.\n"
+        "- Relatório Mensal: gere PDF com filtros por mês, tipo e forma de pagamento."
     )
     pdf.divider()
 
-    # 3️⃣ Cadastrar Postagem
-    pdf.section_title("3️⃣", "Cadastrar Postagem")
+    # 3 Cadastrar Postagem
+    pdf.section_title("3", "Cadastrar Postagem")
     pdf.section_body(
-        "- Preencha todos os campos obrigatórios: Posto, Remetente, Código de Rastreamento, Tipo, Valor, Forma e Status de Pagamento, Funcionário, Datas.\n"
+        "- Preencha todos os campos obrigatórios: Posto, Remetente, Código de Rastreamento, "
+        "Tipo, Valor, Forma e Status de Pagamento, Funcionário, Datas.\n"
         "- O sistema não permite duplicidade de códigos de rastreio.\n"
         "- Clique em 'Cadastrar' para salvar a postagem."
     )
     pdf.divider()
 
-    # 4️⃣ Editar Postagem
-    pdf.section_title("4️⃣", "Editar Postagem")
+    # 4 Editar Postagem
+    pdf.section_title("4", "Editar Postagem")
     pdf.section_body(
         "- Apenas administradores podem editar postagens já cadastradas.\n"
         "- Abra a postagem desejada em 'Listar Postagens' e clique em 'Editar'.\n"
@@ -80,8 +80,8 @@ def gerar_pdf_guia_atendente(nome_arquivo="guia_utilizacao.pdf"):
     )
     pdf.divider()
 
-    # 5️⃣ Pagamentos Pendentes
-    pdf.section_title("5️⃣", "Pagamentos Pendentes")
+    # 5 Pagamentos Pendentes
+    pdf.section_title("5", "Pagamentos Pendentes")
     pdf.section_body(
         "- Acesse a aba 'Pagamentos Pendentes' para ver todas as postagens com pagamento não confirmado.\n"
         "- Clique em 'Marcar como Pago' quando o pagamento for efetuado.\n"
@@ -89,23 +89,22 @@ def gerar_pdf_guia_atendente(nome_arquivo="guia_utilizacao.pdf"):
     )
     pdf.divider()
 
-    # 6️⃣ Relatórios
-    pdf.section_title("6️⃣", "Fechamento Diário e Relatório Mensal")
+    # 6 Relatórios
+    pdf.section_title("6", "Fechamento Diário e Relatório Mensal")
     pdf.section_body(
-        "- 🧾 Fechamento Diário: gera PDF com todas as postagens do dia.\n"
-        "- 📑 Relatório Mensal: gera PDF com postagens filtradas por mês, tipo de postagem, forma de pagamento e posto.\n"
+        "- Fechamento Diário: gera PDF com todas as postagens do dia.\n"
+        "- Relatório Mensal: gera PDF com postagens filtradas por mês, tipo de postagem, forma de pagamento e posto.\n"
         "- Apenas administradores podem gerar relatórios mensais."
     )
     pdf.divider()
 
     # Observações finais
-    pdf.section_title("📌", "Observações Finais")
+    pdf.section_title("Observações Finais", "")
     pdf.section_body(
         "- Mantenha seus dados de login confidenciais.\n"
         "- Siga sempre o fluxo correto para evitar inconsistências nos registros.\n"
-        "- Em caso de dúvidas, contate o administrador do sistema."
+        "- Em caso de dúvidas, contate o administrador do sistema.\n"
         "- Contato: WhatsApp - (11) 96396-1937 / e-mail: robtechservice@outlook.com"
-
     )
 
     # Salvar PDF

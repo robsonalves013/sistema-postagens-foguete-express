@@ -1,10 +1,15 @@
-# app.py
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import db
 from dashboard import mostrar_dashboard
 from utils import gerar_pdf, gerar_relatorio_mensal, gerar_pdf_guia_visual
+
+# Função auxiliar para data/hora em Brasília
+def get_brasilia_now():
+    return datetime.now(ZoneInfo("America/Sao_Paulo"))
 
 # Inicializa DB e config
 db.criar_tabelas()
@@ -29,6 +34,7 @@ if not st.session_state["logado"]:
                 st.session_state["logado"] = True
                 st.session_state["usuario"] = user
                 st.success("✅ Login realizado com sucesso!")
+                st.experimental_rerun()  # Redireciona imediatamente
             else:
                 st.error("❌ Usuário ou senha incorretos.")
     st.stop()
@@ -36,18 +42,16 @@ if not st.session_state["logado"]:
 # Usuário logado
 usuario = st.session_state["usuario"]
 admin = bool(usuario.get("is_admin", 0))
-
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
 opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Pagamentos Pendentes", "Fechamento Diário", "Guia"]
 if admin:
     opcoes += ["Gerenciar Usuários", "Relatório Mensal"]
-
 opcao = st.sidebar.radio("Navegação", opcoes)
 
 if st.sidebar.button("🚪 Sair"):
     st.session_state["logado"] = False
     st.session_state["usuario"] = None
-    st.experimental_set_query_params()  # só para limpar a URL
+    st.experimental_set_query_params()
     st.experimental_rerun()
 
 # DASHBOARD
@@ -66,12 +70,11 @@ elif opcao == "Cadastrar Postagem":
         forma_pagamento = st.selectbox("Forma de Pagamento", ["PIX", "Dinheiro", "Cartão"])
         status_pagamento = st.selectbox("Status do Pagamento", ["Pendente", "Pago"])
         funcionario = st.selectbox("Funcionário", ["Yuri", "Jair"])
-        data_postagem = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        data_postagem = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
         if status_pagamento == "Pago":
-            data_pagamento = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            data_pagamento = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
         else:
             data_pagamento = ""
-
         submit = st.form_submit_button("💾 Cadastrar")
         if submit:
             try:
@@ -102,7 +105,6 @@ elif opcao == "Listar Postagens":
                 st.write(f"**Funcionário:** {p['funcionario']}")
                 st.write(f"**Data Postagem:** {p['data_postagem']}")
                 st.write(f"**Data Pagamento:** {p['data_pagamento'] or ''}")
-
                 if admin:
                     st.divider()
                     st.subheader("✏️ Editar Postagem")
@@ -115,28 +117,23 @@ elif opcao == "Listar Postagens":
                         nova_forma = st.selectbox("Forma Pagamento", ["PIX", "Dinheiro", "Cartão"], index=0 if p['forma_pagamento'] not in ["PIX","Dinheiro","Cartão"] else ["PIX","Dinheiro","Cartão"].index(p['forma_pagamento']))
                         novo_status = st.selectbox("Status", ["Pendente", "Pago"], index=0 if p['status_pagamento'] not in ["Pendente","Pago"] else ["Pendente","Pago"].index(p['status_pagamento']))
                         novo_func = st.selectbox("Funcionário", ["Yuri", "Jair"], index=0 if p['funcionario'] not in ["Yuri","Jair"] else ["Yuri","Jair"].index(p['funcionario']))
-
                         if novo_status == "Pago":
-                            nova_data_pag = st.date_input("Data Pagamento")
-                            nova_data_pag_str = nova_data_pag.strftime("%d/%m/%Y %H:%M:%S")
+                            nova_data_pag = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
                         else:
-                            nova_data_pag_str = ""
-
+                            nova_data_pag = ""
                         salvar = st.form_submit_button("💾 Salvar Alterações")
                         if salvar:
                             novos_dados = (
                                 novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
                                 nova_forma, novo_status, novo_func,
-                                p['data_postagem'],  # mantemos a data_postagem original
-                                nova_data_pag_str
+                                p['data_postagem'],
+                                nova_data_pag
                             )
                             try:
                                 db.editar_postagem(p["id"], novos_dados)
                                 st.success("✅ Postagem atualizada com sucesso!")
                             except Exception as e:
                                 st.error(f"Erro ao atualizar: {e}")
-
-                    # botão excluir fora do form
                     if st.button("🗑️ Excluir Postagem", key=f"excluir_{p['id']}"):
                         try:
                             db.excluir_postagem(p['id'])
@@ -159,7 +156,7 @@ elif opcao == "Pagamentos Pendentes":
                 st.write(f"Funcionário: {p['funcionario']}")
                 st.write(f"Data Postagem: {p['data_postagem']}")
                 if st.button("✅ Marcar como Pago", key=f"pago_{p['id']}"):
-                    data_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    data_atual = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
                     db.atualizar_pagamento(p['id'], "Pago", data_atual)
                     st.success("Pagamento marcado como Pago.")
 
@@ -195,18 +192,14 @@ elif opcao == "Gerenciar Usuários" and admin:
                 st.success("Usuário criado com sucesso!")
             except Exception as e:
                 st.error(f"Erro ao criar usuário: {e}")
-
     st.divider()
     st.subheader("Usuários cadastrados:")
-    usuarios = db.listar_usuarios()  # lista de dicts
+    usuarios = db.listar_usuarios()
     if not usuarios:
         st.info("Nenhum usuário cadastrado.")
     else:
         df_users = pd.DataFrame(usuarios)
-        # mostrar colunas relevantes
         st.dataframe(df_users[["id", "nome", "usuario", "is_admin"]], use_container_width=True)
-
-        # ações por usuário
         for u in usuarios:
             with st.expander(f"{u['nome']} ({u['usuario']})"):
                 novo_nome = st.text_input("Nome", u['nome'], key=f"nome_{u['id']}")
@@ -233,16 +226,15 @@ elif opcao == "Relatório Mensal" and admin:
     st.header("📊 Relatório Mensal")
     col1, col2 = st.columns(2)
     with col1:
-        mes = st.number_input("Mês", min_value=1, max_value=12, value=datetime.now().month)
+        mes = st.number_input("Mês", min_value=1, max_value=12, value=get_brasilia_now().month)
     with col2:
-        ano = st.number_input("Ano", min_value=2000, max_value=2100, value=datetime.now().year)
+        ano = st.number_input("Ano", min_value=2000, max_value=2100, value=get_brasilia_now().year)
     posto = st.selectbox("Posto (opcional)", ["Todos", "Shopping Bolivia", "Hotel Family"])
     tipo = st.selectbox("Tipo de postagem (opcional)", ["Todos", "PAC", "SEDEX"])
     forma = st.selectbox("Forma de pagamento (opcional)", ["Todos", "Dinheiro", "PIX"])
     filtro_posto = None if posto == "Todos" else posto
     filtro_tipo = None if tipo == "Todos" else tipo
     filtro_forma = None if forma == "Todos" else forma
-
     if st.button("Gerar Relatório"):
         postagens = db.listar_postagens_mensal(mes, ano, filtro_posto, filtro_tipo, filtro_forma)
         bytes_pdf, nome_pdf = gerar_relatorio_mensal(postagens)
@@ -250,6 +242,5 @@ elif opcao == "Relatório Mensal" and admin:
             st.download_button("📥 Baixar Relatório Mensal (PDF)", data=bytes_pdf, file_name=nome_pdf, mime="application/pdf")
         else:
             st.info("Nenhuma postagem para o relatório selecionado.")
-
 st.markdown("---")
 st.caption("Sistema de Postagens - Foguete Express 🚀 desenvolvido por RobTech Service")

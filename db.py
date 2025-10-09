@@ -1,47 +1,47 @@
-# db.py
 import os
 import bcrypt
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # já configurada no ambiente
+DATABASE_URL = os.getenv("DATABASE_URL")  # variável configurada no ambiente Render
 
 def conectar():
     """Conecta ao banco PostgreSQL e retorna a conexão."""
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def criar_tabelas():
-    """Cria tabelas de usuários e postagens, caso não existam."""
+    """Cria tabelas de usuários e postagens, se não existirem."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id SERIAL PRIMARY KEY,
-                nome TEXT NOT NULL,
-                usuario TEXT UNIQUE NOT NULL,
-                senha BYTEA NOT NULL,
-                is_admin BOOLEAN DEFAULT FALSE
-            )
+                CREATE TABLE IF NOT EXISTS usuarios (
+                    id SERIAL PRIMARY KEY,
+                    nome TEXT NOT NULL,
+                    usuario TEXT UNIQUE NOT NULL,
+                    senha BYTEA NOT NULL,
+                    is_admin BOOLEAN DEFAULT FALSE
+                )
             """)
             cur.execute("""
-            CREATE TABLE IF NOT EXISTS postagens (
-                id SERIAL PRIMARY KEY,
-                posto TEXT,
-                remetente TEXT,
-                codigo TEXT UNIQUE,
-                tipo TEXT,
-                valor NUMERIC,
-                forma_pagamento TEXT,
-                status_pagamento TEXT,
-                funcionario TEXT,
-                data_postagem TEXT,
-                data_pagamento TEXT
-            )
+                CREATE TABLE IF NOT EXISTS postagens (
+                    id SERIAL PRIMARY KEY,
+                    posto TEXT,
+                    remetente TEXT,
+                    codigo TEXT UNIQUE,
+                    tipo TEXT,
+                    valor NUMERIC,
+                    forma_pagamento TEXT,
+                    status_pagamento TEXT,
+                    funcionario TEXT,
+                    data_postagem TEXT,
+                    data_pagamento TEXT
+                )
             """)
         conn.commit()
 
 # ------------------- Usuários -------------------
+
 def criar_usuario(nome, usuario, senha, is_admin=False):
     senha_hash = bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt())
     with conectar() as conn:
@@ -62,7 +62,6 @@ def autenticar(usuario, senha):
     return None
 
 def listar_usuarios():
-    """Retorna lista de dicionários (cada usuário)."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT id, nome, usuario, is_admin FROM usuarios ORDER BY id")
@@ -100,20 +99,21 @@ def resetar_senha(usuario, nova_senha):
         conn.commit()
 
 # ------------------- Postagens -------------------
+
 def codigo_existe(codigo):
     with conectar() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT id FROM postagens WHERE codigo = %s", (codigo,))
-            return cursor.fetchone() is not None
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM postagens WHERE codigo = %s", (codigo,))
+            return cur.fetchone() is not None
 
 def adicionar_postagem(dados):
     posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento = dados
     if codigo_existe(codigo):
         raise ValueError("Código de rastreio já cadastrado.")
     with conectar() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO postagens 
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO postagens
                 (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento))
@@ -121,16 +121,16 @@ def adicionar_postagem(dados):
 
 def editar_postagem(id_postagem, novos_dados):
     with conectar() as conn:
-        with conn.cursor() as cursor:
-            cursor.execute("""
+        with conn.cursor() as cur:
+            cur.execute("""
                 UPDATE postagens
-                SET posto=%s, remetente=%s, codigo=%s, tipo=%s, valor=%s, 
-                    forma_pagamento=%s, status_pagamento=%s, funcionario=%s, 
+                SET posto=%s, remetente=%s, codigo=%s, tipo=%s, valor=%s,
+                    forma_pagamento=%s, status_pagamento=%s, funcionario=%s,
                     data_postagem=%s, data_pagamento=%s
                 WHERE id=%s
             """, (*novos_dados, id_postagem))
         conn.commit()
-        
+
 def excluir_postagem(postagem_id):
     with conectar() as conn:
         with conn.cursor() as cur:
@@ -167,7 +167,8 @@ def listar_postagens_mensal(mes, ano, filtro_posto=None, filtro_tipo=None, filtr
     with conectar() as conn:
         with conn.cursor() as cur:
             query = """
-                SELECT * FROM postagens
+                SELECT *
+                FROM postagens
                 WHERE EXTRACT(MONTH FROM TO_DATE(data_postagem, 'DD/MM/YYYY HH24:MI:SS')) = %s
                   AND EXTRACT(YEAR FROM TO_DATE(data_postagem, 'DD/MM/YYYY HH24:MI:SS')) = %s
             """

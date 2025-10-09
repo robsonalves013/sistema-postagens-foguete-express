@@ -1,17 +1,6 @@
-# Web framework
 streamlit==1.26.0
-
-# Data manipulation
 pandas==2.1.1
-
-# PDF generation
 fpdf==1.7.2
-
-# Password hashing
 bcrypt==4.0.1
-
-# PostgreSQL connection
 psycopg2-binary==2.9.9
-
-# Dashboard / visualization
 plotly==5.17.0
