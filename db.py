@@ -1,15 +1,15 @@
 # db.py
-import psycopg
-from psycopg.rows import dict_row
-import bcrypt
 import os
+import bcrypt
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from datetime import datetime
 
 DATABASE_URL = os.getenv("DATABASE_URL")  # já configurada no ambiente
 
 def conectar():
     """Conecta ao banco PostgreSQL e retorna a conexão."""
-    return psycopg.connect(DATABASE_URL, row_factory=dict_row, sslmode="require")
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def criar_tabelas():
     """Cria tabelas de usuários e postagens, caso não existam."""
