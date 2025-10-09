@@ -3,7 +3,6 @@ import psycopg
 from psycopg.rows import dict_row
 import bcrypt
 import os
-from datetime import datetime
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -11,33 +10,34 @@ def conectar():
     """Conecta ao banco PostgreSQL e retorna a conexão."""
     return psycopg.connect(DATABASE_URL, row_factory=dict_row, sslmode="require")
 
+# ------------------- Criação das Tabelas -------------------
 def criar_tabelas():
     """Cria tabelas de usuários e postagens, caso não existam."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id SERIAL PRIMARY KEY,
-                nome TEXT NOT NULL,
-                usuario TEXT UNIQUE NOT NULL,
-                senha BYTEA NOT NULL,
-                is_admin BOOLEAN DEFAULT FALSE
-            )
+                CREATE TABLE IF NOT EXISTS usuarios (
+                    id SERIAL PRIMARY KEY,
+                    nome TEXT NOT NULL,
+                    usuario TEXT UNIQUE NOT NULL,
+                    senha BYTEA NOT NULL,
+                    is_admin BOOLEAN DEFAULT FALSE
+                )
             """)
             cur.execute("""
-            CREATE TABLE IF NOT EXISTS postagens (
-                id SERIAL PRIMARY KEY,
-                posto TEXT,
-                remetente TEXT,
-                codigo TEXT UNIQUE,
-                tipo TEXT,
-                valor NUMERIC,
-                forma_pagamento TEXT,
-                status_pagamento TEXT,
-                funcionario TEXT,
-                data_postagem TEXT,
-                data_pagamento TEXT
-            )
+                CREATE TABLE IF NOT EXISTS postagens (
+                    id SERIAL PRIMARY KEY,
+                    posto TEXT,
+                    remetente TEXT,
+                    codigo TEXT UNIQUE,
+                    tipo TEXT,
+                    valor NUMERIC,
+                    forma_pagamento TEXT,
+                    status_pagamento TEXT,
+                    funcionario TEXT,
+                    data_postagem TEXT,
+                    data_pagamento TEXT
+                )
             """)
         conn.commit()
 
@@ -107,8 +107,14 @@ def codigo_existe(codigo):
 
 def adicionar_postagem(dados):
     posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento = dados
+
     if codigo_existe(codigo):
         raise ValueError("Código de rastreio já cadastrado.")
+
+    # Se o pagamento estiver pendente, a data deve ficar em branco
+    if status_pagamento.lower() == "pendente":
+        data_pagamento = ""
+
     with conectar() as conn:
         with conn.cursor() as cursor:
             cursor.execute("""
@@ -119,24 +125,26 @@ def adicionar_postagem(dados):
         conn.commit()
 
 def editar_postagem(id_postagem, novos_dados):
+    posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento = novos_dados
+    if status_pagamento.lower() == "pendente":
+        data_pagamento = ""
     with conectar() as conn:
         with conn.cursor() as cursor:
             cursor.execute("""
                 UPDATE postagens
-                SET posto=%s, remetente=%s, codigo=%s, tipo=%s, valor=%s, 
-                    forma_pagamento=%s, status_pagamento=%s, funcionario=%s, 
+                SET posto=%s, remetente=%s, codigo=%s, tipo=%s, valor=%s,
+                    forma_pagamento=%s, status_pagamento=%s, funcionario=%s,
                     data_postagem=%s, data_pagamento=%s
                 WHERE id=%s
-            """, (*novos_dados, id_postagem))
+            """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento, id_postagem))
         conn.commit()
-        
+
 def excluir_postagem(postagem_id):
     """Exclui uma postagem pelo ID."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM postagens WHERE id=%s", (postagem_id,))
         conn.commit()
-
 
 def listar_postagens():
     with conectar() as conn:
@@ -155,6 +163,8 @@ def listar_postagens_pendentes():
             return cur.fetchall()
 
 def atualizar_pagamento(postagem_id, status, data_pagamento):
+    if status.lower() == "pendente":
+        data_pagamento = ""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""

@@ -98,6 +98,7 @@ def gerar_guia_utilizacao(nome_arquivo="guia_utilizacao.pdf"):
         "- Mantenha seus dados de login confidenciais.\n"
         "- Em caso de dúvidas, contate o administrador do sistema.\n"
         "- Siga sempre o fluxo correto para evitar inconsistências nos registros."
+        "- Contato: WhatsApp - (11) 96396-1937 / e-mail: robtechservice@outlook.com"
     )
     pdf.ln(5)
     

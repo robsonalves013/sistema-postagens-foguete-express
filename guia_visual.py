@@ -7,7 +7,7 @@ class GuiaVisual(FPDF):
         # Cabeçalho colorido
         self.set_font("Arial", "B", 16)
         self.set_text_color(0, 51, 102)  # Azul escuro
-        self.cell(0, 10, "📦 Guia de Utilização - Sistema de Postagens", ln=True, align="C")
+        self.cell(0, 10, "📦 Guia de Utilização - Sistema de Postagens - Foguete Express", ln=True, align="C")
         self.ln(5)
         self.set_text_color(0, 0, 0)
 
@@ -104,6 +104,8 @@ def gerar_guia_visual(nome_arquivo="guia_utilizacao_visual.pdf"):
         "- Mantenha seus dados de login confidenciais.\n"
         "- Siga sempre o fluxo correto para evitar inconsistências nos registros.\n"
         "- Em caso de dúvidas, contate o administrador do sistema."
+        "- Contato: WhatsApp - (11) 96396-1937 / e-mail: robtechservice@outlook.com"
+
     )
 
     # Salvar PDF

@@ -1,82 +1,106 @@
 # utils.py
+import io
 from fpdf import FPDF
 from datetime import datetime
 
-# ---------- PDF fechamento diário ----------
-def gerar_pdf(postagens, nome_arquivo=None):
+# ------------------ PDF DE POSTAGENS ------------------
+def gerar_pdf(postagens, nome_arquivo="fechamento_diario.pdf"):
+    """
+    Gera PDF de fechamento diário com as postagens fornecidas.
+    Retorna BytesIO pronto para download.
+    """
     if not postagens:
         return None
 
-    if not nome_arquivo:
-        data_hoje = datetime.now().strftime("%d-%m-%Y")
-        nome_arquivo = f"fechamento_{data_hoje}.pdf"
-
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"Fechamento Diário - {datetime.now().strftime('%d/%m/%Y')}", ln=True, align='C')
-    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "Fechamento Diário - Sistema de Postagens Foguete Express", ln=True, align="C")
+    pdf.ln(10)
+
     pdf.set_font("Arial", size=12)
-
-    # Cabeçalho
-    pdf.cell(25, 8, "Data", border=1)
-    pdf.cell(35, 8, "Posto", border=1)
-    pdf.cell(40, 8, "Remetente", border=1)
-    pdf.cell(40, 8, "Código", border=1)
-    pdf.cell(25, 8, "Tipo", border=1)
-    pdf.cell(20, 8, "Valor", border=1)
-    pdf.cell(25, 8, "Status", border=1)
-    pdf.ln()
-
     for p in postagens:
-        pdf.cell(25, 8, p['data_postagem'], border=1)
-        pdf.cell(35, 8, p['posto'], border=1)
-        pdf.cell(40, 8, p['remetente'], border=1)
-        pdf.cell(40, 8, p['codigo'], border=1)
-        pdf.cell(25, 8, p['tipo'], border=1)
-        pdf.cell(20, 8, f"R$ {p['valor']:.2f}", border=1)
-        pdf.cell(25, 8, p['status_pagamento'], border=1)
-        pdf.ln()
+        pdf.multi_cell(0, 8,
+            f"Posto: {p['posto']}\n"
+            f"Remetente: {p['remetente']}\n"
+            f"Código: {p['codigo']}\n"
+            f"Tipo: {p['tipo']}\n"
+            f"Valor: R$ {p['valor']:.2f}\n"
+            f"Forma de Pagamento: {p['forma_pagamento']}\n"
+            f"Status: {p['status_pagamento']}\n"
+            f"Funcionário: {p['funcionario']}\n"
+            f"Data Postagem: {p['data_postagem']}\n"
+            f"Data Pagamento: {p['data_pagamento'] or ''}\n"
+            "--------------------------------------------"
+        )
+        pdf.ln(2)
 
-    pdf.output(nome_arquivo)
-    return nome_arquivo
+    # Gerar PDF em memória
+    pdf_bytes = io.BytesIO()
+    pdf.output(pdf_bytes)
+    pdf_bytes.seek(0)
+    return pdf_bytes
 
-
-# ---------- Relatório mensal ----------
-def gerar_relatorio_mensal(postagens, nome_arquivo=None):
+# ------------------ RELATÓRIO MENSAL ------------------
+def gerar_relatorio_mensal(postagens, nome_arquivo="relatorio_mensal.pdf"):
+    """
+    Gera PDF de relatório mensal filtrado.
+    Retorna BytesIO pronto para download.
+    """
     if not postagens:
         return None
 
-    if not nome_arquivo:
-        data_hoje = datetime.now().strftime("%d-%m-%Y")
-        nome_arquivo = f"relatorio_mensal_{data_hoje}.pdf"
-
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, f"Relatório Mensal - {datetime.now().strftime('%d/%m/%Y')}", ln=True, align='C')
-    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "Relatório Mensal - Sistema de Postagens Foguete Express", ln=True, align="C")
+    pdf.ln(10)
+
     pdf.set_font("Arial", size=12)
-
-    # Cabeçalho
-    pdf.cell(25, 8, "Data", border=1)
-    pdf.cell(35, 8, "Posto", border=1)
-    pdf.cell(40, 8, "Remetente", border=1)
-    pdf.cell(40, 8, "Código", border=1)
-    pdf.cell(25, 8, "Tipo", border=1)
-    pdf.cell(20, 8, "Valor", border=1)
-    pdf.cell(25, 8, "Status", border=1)
-    pdf.ln()
-
     for p in postagens:
-        pdf.cell(25, 8, p['data_postagem'], border=1)
-        pdf.cell(35, 8, p['posto'], border=1)
-        pdf.cell(40, 8, p['remetente'], border=1)
-        pdf.cell(40, 8, p['codigo'], border=1)
-        pdf.cell(25, 8, p['tipo'], border=1)
-        pdf.cell(20, 8, f"R$ {p['valor']:.2f}", border=1)
-        pdf.cell(25, 8, p['status_pagamento'], border=1)
-        pdf.ln()
+        pdf.multi_cell(0, 8,
+            f"Posto: {p['posto']}\n"
+            f"Remetente: {p['remetente']}\n"
+            f"Código: {p['codigo']}\n"
+            f"Tipo: {p['tipo']}\n"
+            f"Valor: R$ {p['valor']:.2f}\n"
+            f"Forma de Pagamento: {p['forma_pagamento']}\n"
+            f"Status: {p['status_pagamento']}\n"
+            f"Funcionário: {p['funcionario']}\n"
+            f"Data Postagem: {p['data_postagem']}\n"
+            f"Data Pagamento: {p['data_pagamento'] or ''}\n"
+            "--------------------------------------------"
+        )
+        pdf.ln(2)
 
-    pdf.output(nome_arquivo)
-    return nome_arquivo
+    pdf_bytes = io.BytesIO()
+    pdf.output(pdf_bytes)
+    pdf_bytes.seek(0)
+    return pdf_bytes
+
+# ------------------ GUIA DE ATENDENTES ------------------
+def gerar_pdf_guia_atendentes():
+    """
+    Gera o PDF do Guia de Atendentes em memória.
+    Retorna BytesIO pronto para download.
+    """
+    from guia_utilizacao import gerar_guia_utilizacao
+    # A função gerar_guia_utilizacao retorna o caminho do arquivo, mas vamos gerar em BytesIO
+    nome_arquivo = "guia_atendentes.pdf"
+    gerar_guia_utilizacao(nome_arquivo)
+    with open(nome_arquivo, "rb") as f:
+        pdf_bytes = io.BytesIO(f.read())
+    return pdf_bytes
+
+# ------------------ GUIA DE ADMINISTRADORES ------------------
+def gerar_pdf_guia_admin():
+    """
+    Gera o PDF do Guia de Administradores em memória.
+    Retorna BytesIO pronto para download.
+    """
+    from guia_visual import gerar_guia_visual
+    nome_arquivo = "guia_administradores.pdf"
+    gerar_guia_visual(nome_arquivo)
+    with open(nome_arquivo, "rb") as f:
+        pdf_bytes = io.BytesIO(f.read())
+    return pdf_bytes
