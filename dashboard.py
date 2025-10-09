@@ -14,22 +14,25 @@ def mostrar_dashboard():
         return
 
     df = pd.DataFrame(postagens)
-    
-    # Converter para datetime e remover timezone (tz-naive)
+
+    # Converter para datetime e remover linhas com datas inválidas
     df["data_postagem"] = pd.to_datetime(df["data_postagem"], format="%d/%m/%Y %H:%M:%S", errors="coerce")
-    df["data_postagem"] = df["data_postagem"].dt.tz_localize(None)  # Remove timezone
+    df = df.dropna(subset=["data_postagem"])
+
+    # Tornar datetime tz-naive
+    df["data_postagem"] = df["data_postagem"].dt.tz_localize(None)
 
     filtro = st.selectbox("Período", ["Diário", "Semanal", "Mensal"])
-
-    # Hora de Brasília tz-naive
     hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
 
     if filtro == "Diário":
         dff = df[df["data_postagem"].dt.date == hoje.date()]
     elif filtro == "Semanal":
-        dff = df[df["data_postagem"] >= hoje - pd.Timedelta(days=7)]
-    else:  # Mensal
-        dff = df[df["data_postagem"] >= hoje - pd.Timedelta(days=30)]
+        limite = hoje - pd.Timedelta(days=7)
+        dff = df[df["data_postagem"] >= limite]
+    else:
+        limite = hoje - pd.Timedelta(days=30)
+        dff = df[df["data_postagem"] >= limite]
 
     st.metric("📬 Total postagens", len(dff))
     st.metric("⌛ Pendentes", len(dff[dff["status_pagamento"] == "Pendente"]))
@@ -37,18 +40,14 @@ def mostrar_dashboard():
 
     if not dff.empty:
         grouped = dff.groupby("posto").size().reset_index(name="quantidade")
-        fig = px.bar(
-            grouped, x="posto", y="quantidade", text="quantidade", color="posto",
-            color_discrete_sequence=["#005CA9", "#FFCC00"]
-        )
+        fig = px.bar(grouped, x="posto", y="quantidade", text="quantidade", color="posto",
+                     color_discrete_sequence=["#005CA9", "#FFCC00"])
         fig.update_layout(showlegend=False)
         fig.update_traces(textposition="outside")
         st.plotly_chart(fig, use_container_width=True)
 
-        fig2 = px.pie(
-            dff, names="tipo", title="Distribuição por tipo",
-            color_discrete_sequence=["#005CA9", "#FFCC00", "#003366", "#FFD700"]
-        )
+        fig2 = px.pie(dff, names="tipo", title="Distribuição por tipo",
+                      color_discrete_sequence=["#005CA9", "#FFCC00", "#003366", "#FFD700"])
         st.plotly_chart(fig2, use_container_width=True)
 
     st.subheader("Detalhamento")
