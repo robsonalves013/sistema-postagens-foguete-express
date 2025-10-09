@@ -31,7 +31,7 @@ if not st.session_state["logado"]:
                 st.session_state["logado"] = True
                 st.session_state["usuario"] = user
                 st.success("✅ Login realizado com sucesso!")
-                st.experimental_rerun()
+                st.experimental_rerun()  # Importante para atualizar logo após login
             else:
                 st.error("❌ Usuário ou senha incorretos.")
     st.stop()

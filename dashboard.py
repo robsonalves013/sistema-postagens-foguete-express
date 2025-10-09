@@ -15,17 +15,13 @@ def mostrar_dashboard():
 
     df = pd.DataFrame(postagens)
 
-    # Normaliza o tipo da coluna id para int64 para evitar erros na serialização
+    # Normaliza o tipo da coluna id para int64 para evitar erros no Streamlit
     df['id'] = df['id'].astype('int64')
 
-    # Converter a coluna data_postagem para datetime com formatação brasil e limpeza (str.strip)
-    df["data_postagem"] = pd.to_datetime(
-        df["data_postagem"].str.strip(), dayfirst=True, errors="coerce"
-    )
-    df = df.dropna(subset=["data_postagem"])  # Remove linhas com data inválida
-
-    # Remove timezone (tz-naive)
-    df["data_postagem"] = df["data_postagem"].dt.tz_localize(None)
+    # Converte as datas com tratamento de espaço e formato brasileiro
+    df["data_postagem"] = pd.to_datetime(df["data_postagem"].str.strip(), dayfirst=True, errors="coerce")
+    df = df.dropna(subset=["data_postagem"])  # elimina linhas com datas incorretas
+    df["data_postagem"] = df["data_postagem"].dt.tz_localize(None)  # remove timezone
 
     filtro = st.selectbox("Período", ["Diário", "Semanal", "Mensal"])
     hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
