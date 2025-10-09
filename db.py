@@ -2,16 +2,13 @@ import os
 import bcrypt
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from datetime import datetime
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # variável configurada no ambiente Render
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def conectar():
-    """Conecta ao banco PostgreSQL e retorna a conexão."""
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def criar_tabelas():
-    """Cria tabelas de usuários e postagens, se não existirem."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -39,6 +36,15 @@ def criar_tabelas():
                 )
             """)
         conn.commit()
+
+def autenticar(usuario, senha):
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
+            user = cur.fetchone()
+            if user and bcrypt.checkpw(senha.encode("utf-8"), bytes(user["senha"])):
+                return user
+    return None
 
 # ------------------- Usuários -------------------
 

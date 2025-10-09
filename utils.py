@@ -4,9 +4,7 @@ from io import BytesIO
 from datetime import datetime
 from guia_visual import gerar_pdf_guia_atendente
 
-# -------------------- PDF Fechamento Diário --------------------
 def gerar_pdf(postagens):
-    """Gera PDF do fechamento diário com agregações detalhadas"""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
@@ -15,18 +13,11 @@ def gerar_pdf(postagens):
 
     if isinstance(postagens, list):
         postagens = pd.DataFrame(postagens)
-
-    # Converter para datetime se necessário
     postagens["data_postagem"] = pd.to_datetime(postagens["data_postagem"], errors="coerce")
 
-    # Total geral
     valor_total = postagens["valor"].sum()
     total_postagens = len(postagens)
-    
-    # Quantidade por forma de pagamento
     formas_pagamento_agg = postagens.groupby("forma_pagamento").size()
-    
-    # Quantidade por tipo
     tipos_agg = postagens.groupby("tipo").size()
 
     pdf.set_font("Arial", "B", 12)
@@ -47,11 +38,9 @@ def gerar_pdf(postagens):
         pdf.cell(0, 10, f"- {tipo}: {qtd}", ln=True)
     pdf.ln(10)
 
-    # Agrupamento por posto
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Detalhamento por Posto:", ln=True)
     pdf.ln(5)
-
     for posto, grupo in postagens.groupby("posto"):
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 10, f"Posto: {posto} (Total: {len(grupo)}, Valor: R$ {grupo['valor'].sum():.2f})", ln=True)
@@ -68,9 +57,7 @@ def gerar_pdf(postagens):
     nome_pdf = f"fechamento_diario_{datetime.now().strftime('%d%m%Y')}.pdf"
     return pdf_bytes, nome_pdf
 
-# -------------------- PDF Relatório Mensal --------------------
 def gerar_relatorio_mensal(postagens):
-    """Gera PDF do relatório mensal com agregações detalhadas"""
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
@@ -108,7 +95,6 @@ def gerar_relatorio_mensal(postagens):
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Detalhamento por Posto:", ln=True)
     pdf.ln(5)
-
     for posto, grupo in postagens.groupby("posto"):
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 10, f"Posto: {posto} (Total: {len(grupo)}, Valor: R$ {grupo['valor'].sum():.2f})", ln=True)
@@ -125,9 +111,7 @@ def gerar_relatorio_mensal(postagens):
     nome_pdf = f"relatorio_mensal_{datetime.now().strftime('%m%Y')}.pdf"
     return pdf_bytes, nome_pdf
 
-# -------------------- Guia de Utilização --------------------
 def gerar_pdf_guia_visual():
-    """Gera e oferece para download o Guia de Utilização"""
     nome_pdf = "guia_utilizacao.pdf"
     gerar_pdf_guia_atendente(nome_pdf)
     with open(nome_pdf, "rb") as f:

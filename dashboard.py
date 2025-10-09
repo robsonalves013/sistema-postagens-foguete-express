@@ -14,16 +14,8 @@ def mostrar_dashboard():
         return
 
     df = pd.DataFrame(postagens)
-    st.write("Dados brutos das postagens (preview):")
-    st.write(df.head())
-    st.write("Tipos das colunas:")
-    st.write(df.dtypes)
-
-    # Converter para datetime e remover linhas com datas inválidas
-    df["data_postagem"] = pd.to_datetime(df["data_postagem"], format="%d/%m/%Y %H:%M:%S", errors="coerce")
+    df["data_postagem"] = pd.to_datetime(df["data_postagem"].str.strip(), dayfirst=True, errors="coerce")
     df = df.dropna(subset=["data_postagem"])
-
-    # Tornar datetime tz-naive
     df["data_postagem"] = df["data_postagem"].dt.tz_localize(None)
 
     filtro = st.selectbox("Período", ["Diário", "Semanal", "Mensal"])
@@ -32,11 +24,9 @@ def mostrar_dashboard():
     if filtro == "Diário":
         dff = df[df["data_postagem"].dt.date == hoje.date()]
     elif filtro == "Semanal":
-        limite = hoje - pd.Timedelta(days=7)
-        dff = df[df["data_postagem"] >= limite]
+        dff = df[df["data_postagem"] >= hoje - pd.Timedelta(days=7)]
     else:
-        limite = hoje - pd.Timedelta(days=30)
-        dff = df[df["data_postagem"] >= limite]
+        dff = df[df["data_postagem"] >= hoje - pd.Timedelta(days=30)]
 
     st.metric("📬 Total postagens", len(dff))
     st.metric("⌛ Pendentes", len(dff[dff["status_pagamento"] == "Pendente"]))

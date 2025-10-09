@@ -7,21 +7,18 @@ import db
 from dashboard import mostrar_dashboard
 from utils import gerar_pdf, gerar_relatorio_mensal, gerar_pdf_guia_visual
 
-# Função auxiliar para data/hora em Brasília
 def get_brasilia_now():
     return datetime.now(ZoneInfo("America/Sao_Paulo"))
 
-# Inicializa DB e config
 db.criar_tabelas()
+
 st.set_page_config(page_title="Sistema de Postagens - Foguete Express", layout="wide")
 
-# Sessão
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
 if "usuario" not in st.session_state:
     st.session_state["usuario"] = None
 
-# Login
 if not st.session_state["logado"]:
     st.title("📦 Sistema de Postagens Foguete Express - Login")
     with st.form("login_form"):
@@ -34,12 +31,11 @@ if not st.session_state["logado"]:
                 st.session_state["logado"] = True
                 st.session_state["usuario"] = user
                 st.success("✅ Login realizado com sucesso!")
-                st.experimental_rerun()  # Redireciona imediatamente
+                st.experimental_rerun()
             else:
                 st.error("❌ Usuário ou senha incorretos.")
     st.stop()
 
-# Usuário logado
 usuario = st.session_state["usuario"]
 admin = bool(usuario.get("is_admin", 0))
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
@@ -54,7 +50,6 @@ if st.sidebar.button("🚪 Sair"):
     st.experimental_set_query_params()
     st.experimental_rerun()
 
-# DASHBOARD
 if opcao == "Dashboard":
     mostrar_dashboard()
 
