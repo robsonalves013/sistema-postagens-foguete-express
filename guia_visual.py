@@ -29,7 +29,7 @@ class GuiaVisual(FPDF):
         self.line(10, self.get_y(), 200, self.get_y())
         self.ln(3)
 
-def gerar_guia_visual(nome_arquivo="guia_utilizacao_visual.pdf"):
+def gerar_pdf_guia_atendente(nome_arquivo="guia_utilizacao.pdf"):
     pdf = GuiaVisual()
     pdf.add_page()
 
@@ -114,4 +114,4 @@ def gerar_guia_visual(nome_arquivo="guia_utilizacao_visual.pdf"):
     return nome_arquivo
 
 if __name__ == "__main__":
-    gerar_guia_visual()
+    gerar_pdf_guia_atendente()

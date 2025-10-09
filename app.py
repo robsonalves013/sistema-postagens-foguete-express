@@ -4,11 +4,10 @@ from datetime import datetime
 
 import db
 from dashboard import mostrar_dashboard
+from guia_visual import gerar_pdf_guia_atendente
 from utils import (
     gerar_pdf,
     gerar_relatorio_mensal,
-    gerar_pdf_guia_atendentes,
-    gerar_pdf_guia_admin
 )
 
 
@@ -211,23 +210,70 @@ elif opcao == "Fechamento Diário":
 # ---------------- GUIA ----------------
 if opcao == "Guia":
     st.header("📘 Guia de Utilização do Sistema")
-    st.markdown("Selecione o PDF que deseja gerar e baixar:")
+    st.markdown("Clique no botão abaixo para gerar e baixar o guia:")
 
-    guias = {
-        "Guia Atendentes": gerar_guia_utilizacao,
-        "Guia Administradores": gerar_guia_visual
-    }
-
-    for nome, func_gerar in guias.items():
-        if st.button(f"📄 Gerar e Baixar {nome}"):
-            pdf_bytes = gerar_pdf_guia_atendentes()
-            st.download_button(
-            label="📄 Baixar Guia Atendentes",
-            data=pdf_bytes,
-            file_name="guia_atendentes.pdf",
+    if st.button("📄 Gerar Guia de Utilização"):
+        pdf_file = gerar_pdf_guia_visual()
+        st.download_button(
+            label="⬇️ Baixar Guia de Utilização",
+            data=pdf_file,
+            file_name="guia_utilizacao.pdf",
             mime="application/pdf"
-            )
+        )
 
+# ---------------------- GERENCIAR USUÁRIOS ----------------------
+elif opcao == "Gerenciar Usuários":
+    st.header("👥 Gerenciar Usuários")
+
+    usuarios = db.listar_usuarios()
+
+    # Exibe a lista de usuários existentes
+    if usuarios.empty:
+        st.info("Nenhum usuário cadastrado ainda.")
+    else:
+        st.subheader("Usuários cadastrados:")
+        st.dataframe(usuarios[["id", "nome", "usuario", "nivel"]])
+
+    st.divider()
+
+    st.subheader("Cadastrar Novo Usuário")
+
+    with st.form("cadastro_usuario"):
+        nome = st.text_input("Nome completo:")
+        usuario = st.text_input("Nome de usuário (login):")
+        senha = st.text_input("Senha:", type="password")
+        nivel = st.selectbox("Nível de acesso:", ["atendente", "admin"])
+
+        submitted = st.form_submit_button("💾 Cadastrar Usuário")
+
+        if submitted:
+            if nome and usuario and senha:
+                sucesso = db.cadastrar_usuario(nome, usuario, senha, nivel)
+                if sucesso:
+                    st.success(f"Usuário '{usuario}' cadastrado com sucesso!")
+                else:
+                    st.error("Erro: nome de usuário já existe.")
+            else:
+                st.warning("Preencha todos os campos antes de cadastrar.")
+
+    st.divider()
+
+    st.subheader("Excluir Usuário")
+    usuarios_lista = db.listar_usuarios()
+
+    if not usuarios_lista.empty:
+        usuario_excluir = st.selectbox(
+            "Selecione o usuário para excluir:",
+            usuarios_lista["usuario"].tolist()
+        )
+
+        if st.button("🗑️ Excluir Usuário"):
+            if db.excluir_usuario_por_nome(usuario_excluir):
+                st.success(f"Usuário '{usuario_excluir}' excluído com sucesso!")
+            else:
+                st.error("Erro ao excluir usuário.")
+    else:
+        st.info("Nenhum usuário disponível para exclusão.")
 
 
 # ---------------- RELATÓRIO MENSAL ----------------

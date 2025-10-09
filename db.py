@@ -2,6 +2,7 @@
 import psycopg
 from psycopg.rows import dict_row
 import bcrypt
+import pandas as pd
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -43,6 +44,7 @@ def criar_tabelas():
 
 # ------------------- Usuários -------------------
 def criar_usuario(nome, usuario, senha, is_admin=False):
+    """Cria um novo usuário com senha criptografada."""
     senha_hash = bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt())
     with conectar() as conn:
         with conn.cursor() as cur:
@@ -51,8 +53,10 @@ def criar_usuario(nome, usuario, senha, is_admin=False):
                 VALUES (%s, %s, %s, %s)
             """, (nome, usuario, senha_hash, is_admin))
         conn.commit()
+    return True
 
 def autenticar(usuario, senha):
+    """Valida login verificando senha hash."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
@@ -62,12 +66,17 @@ def autenticar(usuario, senha):
     return None
 
 def listar_usuarios():
+    """Lista todos os usuários em formato DataFrame para exibição no Streamlit."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT id, nome, usuario, is_admin FROM usuarios ORDER BY id")
-            return cur.fetchall()
+            rows = cur.fetchall()
+    if not rows:
+        return pd.DataFrame(columns=["id", "nome", "usuario", "is_admin"])
+    return pd.DataFrame(rows)
 
 def atualizar_usuario(user_id, nome, senha=None, is_admin=False):
+    """Atualiza dados do usuário (opcionalmente a senha)."""
     with conectar() as conn:
         with conn.cursor() as cur:
             if senha:
@@ -85,18 +94,22 @@ def atualizar_usuario(user_id, nome, senha=None, is_admin=False):
                 """, (nome, is_admin, user_id))
         conn.commit()
 
-def excluir_usuario(user_id):
+def excluir_usuario_por_nome(usuario):
+    """Exclui um usuário pelo nome de login."""
     with conectar() as conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM usuarios WHERE id=%s", (user_id,))
+            cur.execute("DELETE FROM usuarios WHERE usuario=%s", (usuario,))
         conn.commit()
+    return True
 
 def resetar_senha(usuario, nova_senha):
+    """Reseta a senha de um usuário."""
     nova_hash = bcrypt.hashpw(nova_senha.encode("utf-8"), bcrypt.gensalt())
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("UPDATE usuarios SET senha=%s WHERE usuario=%s", (nova_hash, usuario))
         conn.commit()
+
 
 # ------------------- Postagens -------------------
 def codigo_existe(codigo):
