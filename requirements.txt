@@ -1,8 +1,8 @@
-streamlit==1.39.0
-pandas==2.2.3
-fpdf==1.7.2
-bcrypt==4.2.0
-psycopg2-binary==2.9.9
-python-dateutil==2.9.0.post0
-reportlab==4.2.5
-openpyxl==3.1.5
+streamlit
+pandas
+fpdf
+bcrypt
+psycopg[binary]
+python-dateutil
+reportlab
+openpyxl
