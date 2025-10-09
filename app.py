@@ -31,7 +31,7 @@ if not st.session_state["logado"]:
                 st.session_state["logado"] = True
                 st.session_state["usuario"] = user
                 st.success("✅ Login realizado com sucesso!")
-                st.experimental_rerun()  # Importante para atualizar logo após login
+                st.experimental_rerun()
             else:
                 st.error("❌ Usuário ou senha incorretos.")
     st.stop()
@@ -53,7 +53,6 @@ if st.sidebar.button("🚪 Sair"):
 if opcao == "Dashboard":
     mostrar_dashboard()
 
-# CADASTRAR
 elif opcao == "Cadastrar Postagem":
     st.header("📝 Cadastrar Nova Postagem")
     with st.form("form_postagem"):
@@ -65,6 +64,7 @@ elif opcao == "Cadastrar Postagem":
         forma_pagamento = st.selectbox("Forma de Pagamento", ["PIX", "Dinheiro", "Cartão"])
         status_pagamento = st.selectbox("Status do Pagamento", ["Pendente", "Pago"])
         funcionario = st.selectbox("Funcionário", ["Yuri", "Jair"])
+        observacao = st.text_area("Observação (opcional)")
         data_postagem = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
         if status_pagamento == "Pago":
             data_pagamento = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
@@ -72,16 +72,13 @@ elif opcao == "Cadastrar Postagem":
             data_pagamento = ""
         submit = st.form_submit_button("💾 Cadastrar")
         if submit:
+            dados = (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento, observacao)
             try:
-                dados = (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
                 db.adicionar_postagem(dados)
                 st.success("✅ Postagem cadastrada com sucesso!")
-            except ValueError as ve:
-                st.error(str(ve))
             except Exception as e:
                 st.error(f"Erro ao cadastrar: {e}")
 
-# LISTAR
 elif opcao == "Listar Postagens":
     st.header("📋 Lista de Postagens")
     postagens = db.listar_postagens()
@@ -100,18 +97,25 @@ elif opcao == "Listar Postagens":
                 st.write(f"**Funcionário:** {p['funcionario']}")
                 st.write(f"**Data Postagem:** {p['data_postagem']}")
                 st.write(f"**Data Pagamento:** {p['data_pagamento'] or ''}")
+                st.write(f"**Observação:** {p.get('observacao', '')}")
                 if admin:
                     st.divider()
                     st.subheader("✏️ Editar Postagem")
                     with st.form(f"editar_{p['id']}"):
-                        novo_posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"], index=0 if p['posto'] not in ["Shopping Bolivia", "Hotel Family"] else ["Shopping Bolivia", "Hotel Family"].index(p['posto']))
+                        novo_posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"],
+                                                 index=["Shopping Bolivia", "Hotel Family"].index(p['posto']) if p['posto'] in ["Shopping Bolivia", "Hotel Family"] else 0)
                         novo_remetente = st.text_input("Remetente", p['remetente'])
                         novo_codigo = st.text_input("Código", p['codigo'])
-                        novo_tipo = st.selectbox("Tipo", ["PAC", "SEDEX"], index=0 if p['tipo'] not in ["PAC", "SEDEX"] else ["PAC","SEDEX"].index(p['tipo']))
+                        novo_tipo = st.selectbox("Tipo", ["PAC", "SEDEX"],
+                                                 index=["PAC", "SEDEX"].index(p['tipo']) if p['tipo'] in ["PAC", "SEDEX"] else 0)
                         novo_valor = st.number_input("Valor (R$)", value=float(p['valor']))
-                        nova_forma = st.selectbox("Forma Pagamento", ["PIX", "Dinheiro", "Cartão"], index=0 if p['forma_pagamento'] not in ["PIX","Dinheiro","Cartão"] else ["PIX","Dinheiro","Cartão"].index(p['forma_pagamento']))
-                        novo_status = st.selectbox("Status", ["Pendente", "Pago"], index=0 if p['status_pagamento'] not in ["Pendente","Pago"] else ["Pendente","Pago"].index(p['status_pagamento']))
-                        novo_func = st.selectbox("Funcionário", ["Yuri", "Jair"], index=0 if p['funcionario'] not in ["Yuri","Jair"] else ["Yuri","Jair"].index(p['funcionario']))
+                        nova_forma = st.selectbox("Forma Pagamento", ["PIX", "Dinheiro", "Cartão"],
+                                                  index=["PIX", "Dinheiro", "Cartão"].index(p['forma_pagamento']) if p['forma_pagamento'] in ["PIX", "Dinheiro", "Cartão"] else 0)
+                        novo_status = st.selectbox("Status", ["Pendente", "Pago"],
+                                                  index=["Pendente", "Pago"].index(p['status_pagamento']) if p['status_pagamento'] in ["Pendente", "Pago"] else 0)
+                        novo_func = st.selectbox("Funcionário", ["Yuri", "Jair"],
+                                                index=["Yuri", "Jair"].index(p['funcionario']) if p['funcionario'] in ["Yuri", "Jair"] else 0)
+                        nova_observacao = st.text_area("Observação", p.get('observacao', ''))
                         if novo_status == "Pago":
                             nova_data_pag = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
                         else:
@@ -121,8 +125,7 @@ elif opcao == "Listar Postagens":
                             novos_dados = (
                                 novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
                                 nova_forma, novo_status, novo_func,
-                                p['data_postagem'],
-                                nova_data_pag
+                                p['data_postagem'], nova_data_pag, nova_observacao
                             )
                             try:
                                 db.editar_postagem(p["id"], novos_dados)
@@ -138,7 +141,6 @@ elif opcao == "Listar Postagens":
                 else:
                     st.caption("🔒 Somente administradores podem editar/excluir postagens.")
 
-# PAGAMENTOS PENDENTES
 elif opcao == "Pagamentos Pendentes":
     st.header("💰 Pagamentos Pendentes")
     pendentes = db.listar_postagens_pendentes()
@@ -150,12 +152,12 @@ elif opcao == "Pagamentos Pendentes":
                 st.write(f"Remetente: {p['remetente']}")
                 st.write(f"Funcionário: {p['funcionario']}")
                 st.write(f"Data Postagem: {p['data_postagem']}")
+                st.write(f"Observação: {p.get('observacao', '')}")
                 if st.button("✅ Marcar como Pago", key=f"pago_{p['id']}"):
                     data_atual = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
                     db.atualizar_pagamento(p['id'], "Pago", data_atual)
                     st.success("Pagamento marcado como Pago.")
 
-# FECHAMENTO DIÁRIO
 elif opcao == "Fechamento Diário":
     st.header("🧾 Fechamento Diário")
     postagens = db.listar_postagens()
@@ -165,11 +167,11 @@ elif opcao == "Fechamento Diário":
     else:
         st.download_button("📥 Baixar Fechamento Diário (PDF)", data=bytes_pdf, file_name=nome_pdf, mime="application/pdf")
 
-# GUIA
 elif opcao == "Guia":
     st.header("📘 Guia de Utilização do Sistema")
     bytes_pdf, nome_pdf = gerar_pdf_guia_visual()
     st.download_button("📥 Baixar Guia de Utilização", data=bytes_pdf, file_name=nome_pdf, mime="application/pdf")
+
 
 # GERENCIAR USUÁRIOS
 elif opcao == "Gerenciar Usuários" and admin:

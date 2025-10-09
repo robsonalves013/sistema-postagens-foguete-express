@@ -6,9 +6,11 @@ from psycopg2.extras import RealDictCursor
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def conectar():
+    """Conecta ao banco PostgreSQL e retorna a conexão."""
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def criar_tabelas():
+    """Cria as tabelas de usuarios e postagens, caso não existam."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -32,30 +34,57 @@ def criar_tabelas():
                     status_pagamento TEXT,
                     funcionario TEXT,
                     data_postagem TEXT,
-                    data_pagamento TEXT
+                    data_pagamento TEXT,
+                    observacao TEXT
                 )
             """)
         conn.commit()
 
-def autenticar(usuario, senha):
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM usuarios WHERE usuario=%s", (usuario,))
-            user = cur.fetchone()
-            if user and bcrypt.checkpw(senha.encode("utf-8"), bytes(user["senha"])):
-                return user
-    return None
-
-# ------------------- Usuários -------------------
-
-def criar_usuario(nome, usuario, senha, is_admin=False):
-    senha_hash = bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt())
+def adicionar_postagem(dados):
+    posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento, observacao = dados
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO usuarios (nome, usuario, senha, is_admin)
-                VALUES (%s, %s, %s, %s)
-            """, (nome, usuario, senha_hash, is_admin))
+                INSERT INTO postagens
+                (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
+                funcionario, data_postagem, data_pagamento, observacao)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
+                  funcionario, data_postagem, data_pagamento, observacao))
+        conn.commit()
+
+def editar_postagem(id_postagem, novos_dados):
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE postagens
+                SET posto=%s, remetente=%s, codigo=%s, tipo=%s, valor=%s,
+                    forma_pagamento=%s, status_pagamento=%s, funcionario=%s,
+                    data_postagem=%s, data_pagamento=%s, observacao=%s
+                WHERE id=%s
+            """, (*novos_dados, id_postagem))
+        conn.commit()
+
+def listar_postagens():
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM postagens ORDER BY id DESC")
+            return cur.fetchall()
+
+def listar_postagens_pendentes():
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM postagens WHERE status_pagamento='Pendente' ORDER BY id DESC")
+            return cur.fetchall()
+
+def atualizar_pagamento(postagem_id, status, data_pagamento):
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE postagens
+                SET status_pagamento=%s, data_pagamento=%s
+                WHERE id=%s
+            """, (status, data_pagamento, postagem_id))
         conn.commit()
 
 def autenticar(usuario, senha):

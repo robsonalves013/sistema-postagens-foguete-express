@@ -4,6 +4,7 @@ from io import BytesIO
 from datetime import datetime
 from guia_visual import gerar_pdf_guia_atendente
 
+# PDF de fechamento diário com observação incluída nos detalhes
 def gerar_pdf(postagens):
     pdf = FPDF()
     pdf.add_page()
@@ -53,10 +54,20 @@ def gerar_pdf(postagens):
             pdf.cell(0, 8, f"   Tipo: {tipo} - Quantidade: {qtd}", ln=True)
         pdf.ln(3)
 
+    # Adiciona notas de observação resumidas ao final
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, "Observações:", ln=True)
+    pdf.set_font("Arial", size=10)
+    for _, row in postagens.iterrows():
+        if row.get("observacao"):
+            pdf.multi_cell(0, 5, f"- {row['codigo']}: {row['observacao']}")
+    pdf.ln(5)
+
     pdf_bytes = BytesIO(pdf.output(dest="S").encode("latin1"))
     nome_pdf = f"fechamento_diario_{datetime.now().strftime('%d%m%Y')}.pdf"
     return pdf_bytes, nome_pdf
 
+# PDF de relatório mensal similar, com observações e agregações
 def gerar_relatorio_mensal(postagens):
     pdf = FPDF()
     pdf.add_page()
@@ -106,6 +117,15 @@ def gerar_relatorio_mensal(postagens):
         for tipo, qtd in tipos_posto.items():
             pdf.cell(0, 8, f"   Tipo: {tipo} - Quantidade: {qtd}", ln=True)
         pdf.ln(3)
+
+    # Observações relatadas ao final do relatório mensal
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, "Observações:", ln=True)
+    pdf.set_font("Arial", size=10)
+    for _, row in postagens.iterrows():
+        if row.get("observacao"):
+            pdf.multi_cell(0, 5, f"- {row['codigo']}: {row['observacao']}")
+    pdf.ln(5)
 
     pdf_bytes = BytesIO(pdf.output(dest="S").encode("latin1"))
     nome_pdf = f"relatorio_mensal_{datetime.now().strftime('%m%Y')}.pdf"

@@ -15,22 +15,25 @@ def mostrar_dashboard():
 
     df = pd.DataFrame(postagens)
 
-    # Normaliza o tipo da coluna id para int64 para evitar erros no Streamlit
+    # Normaliza coluna id para int64 para evitar problemas na exibição
     df['id'] = df['id'].astype('int64')
 
-    # Converte as datas com tratamento de espaço e formato brasileiro
-    df["data_postagem"] = pd.to_datetime(df["data_postagem"].str.strip(), dayfirst=True, errors="coerce")
-    df = df.dropna(subset=["data_postagem"])  # elimina linhas com datas incorretas
+    # Conversão de data para datetime com dayfirst e limpeza de strings
+    df["data_postagem"] = pd.to_datetime(
+        df["data_postagem"].str.strip(), dayfirst=True, errors="coerce"
+    )
+    df = df.dropna(subset=["data_postagem"])  # remover datas inválidas
     df["data_postagem"] = df["data_postagem"].dt.tz_localize(None)  # remove timezone
 
     filtro = st.selectbox("Período", ["Diário", "Semanal", "Mensal"])
+
     hoje = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
 
     if filtro == "Diário":
         dff = df[df["data_postagem"].dt.date == hoje.date()]
     elif filtro == "Semanal":
         dff = df[df["data_postagem"] >= hoje - pd.Timedelta(days=7)]
-    else:  # Mensal
+    else:
         dff = df[df["data_postagem"] >= hoje - pd.Timedelta(days=30)]
 
     st.metric("📬 Total postagens", len(dff))
@@ -50,4 +53,6 @@ def mostrar_dashboard():
         st.plotly_chart(fig2, use_container_width=True)
 
     st.subheader("Detalhamento")
-    st.dataframe(dff.sort_values("data_postagem", ascending=False), use_container_width=True)
+    st.dataframe(dff.sort_values("data_postagem", ascending=False)[
+        ["id", "posto", "remetente", "codigo", "tipo", "valor", "forma_pagamento", "status_pagamento", "funcionario", "data_postagem", "observacao"]
+    ], use_container_width=True)
