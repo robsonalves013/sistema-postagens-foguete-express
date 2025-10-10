@@ -10,7 +10,7 @@ def conectar():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def criar_tabelas():
-    """Cria as tabelas de usuarios e postagens, caso não existam."""
+    """Cria as tabelas de usuarios e postagens, caso não existam e adiciona coluna observacao em postagens."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -23,10 +23,6 @@ def criar_tabelas():
                 )
             """)
             cur.execute("""
-            ALTER TABLE postagens ADD COLUMN IF NOT EXISTS observacao TEXT;
-            """)
-        conn.commit()
-            cur.execute("""
                 CREATE TABLE IF NOT EXISTS postagens (
                     id SERIAL PRIMARY KEY,
                     posto TEXT,
@@ -38,11 +34,14 @@ def criar_tabelas():
                     status_pagamento TEXT,
                     funcionario TEXT,
                     data_postagem TEXT,
-                    data_pagamento TEXT,
-                    observacao TEXT
+                    data_pagamento TEXT
                 )
             """)
+            cur.execute("""
+                ALTER TABLE postagens ADD COLUMN IF NOT EXISTS observacao TEXT;
+            """)
         conn.commit()
+
 
 def adicionar_postagem(dados):
     posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento, observacao = dados
