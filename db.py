@@ -2,6 +2,7 @@ import os
 import bcrypt
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2 import errors
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -10,7 +11,7 @@ def conectar():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def criar_tabelas():
-    """Cria as tabelas de usuarios e postagens, caso não existam e adiciona coluna observacao em postagens."""
+    """Cria as tabelas de usuarios e postagens, caso não existam."""
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -34,26 +35,36 @@ def criar_tabelas():
                     status_pagamento TEXT,
                     funcionario TEXT,
                     data_postagem TEXT,
-                    data_pagamento TEXT
+                    data_pagamento TEXT,
+                    observacao TEXT
                 )
             """)
+            # Garante que campo observacao exista
             cur.execute("""
                 ALTER TABLE postagens ADD COLUMN IF NOT EXISTS observacao TEXT;
             """)
         conn.commit()
 
+def codigo_existe(codigo):
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM postagens WHERE codigo = %s", (codigo,))
+            return cur.fetchone() is not None
 
 def adicionar_postagem(dados):
     posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento, observacao = dados
     with conectar() as conn:
         with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO postagens
-                (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
-                 funcionario, data_postagem, data_pagamento, observacao)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
-                  funcionario, data_postagem, data_pagamento, observacao))
+            try:
+                cur.execute("""
+                    INSERT INTO postagens
+                    (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
+                     funcionario, data_postagem, data_pagamento, observacao)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
+                      funcionario, data_postagem, data_pagamento, observacao))
+            except errors.UniqueViolation:
+                raise ValueError("Código de rastreio já cadastrado.")
         conn.commit()
 
 def editar_postagem(id_postagem, novos_dados):
@@ -135,12 +146,6 @@ def resetar_senha(usuario, nova_senha):
         with conn.cursor() as cur:
             cur.execute("UPDATE usuarios SET senha=%s WHERE usuario=%s", (nova_hash, usuario))
         conn.commit()
-
-def codigo_existe(codigo):
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT id FROM postagens WHERE codigo = %s", (codigo,))
-            return cur.fetchone() is not None
 
 def excluir_postagem(postagem_id):
     with conectar() as conn:

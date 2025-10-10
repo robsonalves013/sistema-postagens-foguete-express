@@ -4,7 +4,6 @@ from io import BytesIO
 from datetime import datetime
 from guia_visual import gerar_pdf_guia_atendente
 
-# PDF de fechamento diário com observação incluída nos detalhes
 def gerar_pdf(postagens):
     pdf = FPDF()
     pdf.add_page()
@@ -15,6 +14,9 @@ def gerar_pdf(postagens):
     if isinstance(postagens, list):
         postagens = pd.DataFrame(postagens)
     postagens["data_postagem"] = pd.to_datetime(postagens["data_postagem"], errors="coerce")
+
+    # Filtra os status Pago e Pendente
+    postagens = postagens[postagens["status_pagamento"].isin(["Pago", "Pendente"])]
 
     valor_total = postagens["valor"].sum()
     total_postagens = len(postagens)
@@ -42,6 +44,7 @@ def gerar_pdf(postagens):
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Detalhamento por Posto:", ln=True)
     pdf.ln(5)
+
     for posto, grupo in postagens.groupby("posto"):
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 10, f"Posto: {posto} (Total: {len(grupo)}, Valor: R$ {grupo['valor'].sum():.2f})", ln=True)
@@ -54,7 +57,6 @@ def gerar_pdf(postagens):
             pdf.cell(0, 8, f"   Tipo: {tipo} - Quantidade: {qtd}", ln=True)
         pdf.ln(3)
 
-    # Adiciona notas de observação resumidas ao final
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Observações:", ln=True)
     pdf.set_font("Arial", size=10)
@@ -67,7 +69,6 @@ def gerar_pdf(postagens):
     nome_pdf = f"fechamento_diario_{datetime.now().strftime('%d%m%Y')}.pdf"
     return pdf_bytes, nome_pdf
 
-# PDF de relatório mensal similar, com observações e agregações
 def gerar_relatorio_mensal(postagens):
     pdf = FPDF()
     pdf.add_page()
@@ -79,6 +80,9 @@ def gerar_relatorio_mensal(postagens):
         postagens = pd.DataFrame(postagens)
 
     postagens["data_postagem"] = pd.to_datetime(postagens["data_postagem"], errors="coerce")
+
+    # Filtra os status Pago e Pendente
+    postagens = postagens[postagens["status_pagamento"].isin(["Pago", "Pendente"])]
 
     valor_total = postagens["valor"].sum()
     total_postagens = len(postagens)
@@ -106,6 +110,7 @@ def gerar_relatorio_mensal(postagens):
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Detalhamento por Posto:", ln=True)
     pdf.ln(5)
+
     for posto, grupo in postagens.groupby("posto"):
         pdf.set_font("Arial", "B", 11)
         pdf.cell(0, 10, f"Posto: {posto} (Total: {len(grupo)}, Valor: R$ {grupo['valor'].sum():.2f})", ln=True)
@@ -118,7 +123,6 @@ def gerar_relatorio_mensal(postagens):
             pdf.cell(0, 8, f"   Tipo: {tipo} - Quantidade: {qtd}", ln=True)
         pdf.ln(3)
 
-    # Observações relatadas ao final do relatório mensal
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 10, "Observações:", ln=True)
     pdf.set_font("Arial", size=10)

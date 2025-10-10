@@ -11,16 +11,12 @@ from utils import gerar_pdf, gerar_relatorio_mensal, gerar_pdf_guia_visual
 def get_brasilia_now():
     return datetime.now(ZoneInfo("America/Sao_Paulo"))
 
-# Define tempo de inatividade (5 minutos)
 TEMPO_INATIVIDADE = 5 * 60
 
-# Inicializa tabelas
 db.criar_tabelas()
 
-# Configuração da página
 st.set_page_config(page_title="Sistema de Postagens - Foguete Express", layout="wide")
 
-# Controle de timeout por inatividade
 if "ultimo_acesso" not in st.session_state:
     st.session_state["ultimo_acesso"] = time.time()
 
@@ -34,7 +30,6 @@ if st.session_state.get("logado") and (tempo_agora - st.session_state["ultimo_ac
 if st.session_state.get("logado"):
     st.session_state["ultimo_acesso"] = tempo_agora
 
-# Sessão inicial e login
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
 if "usuario" not in st.session_state:
@@ -57,7 +52,6 @@ if not st.session_state["logado"]:
                 st.error("❌ Usuário ou senha incorretos.")
     st.stop()
 
-# Usuário logado
 usuario = st.session_state["usuario"]
 admin = bool(usuario.get("is_admin", 0))
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
@@ -88,18 +82,48 @@ elif opcao == "Cadastrar Postagem":
         funcionario = st.selectbox("Funcionário", ["Yuri", "Jair"])
         observacao = st.text_area("Observação (opcional)")
         data_postagem = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
+
         if status_pagamento == "Pago":
             data_pagamento = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
         else:
             data_pagamento = ""
+
         submit = st.form_submit_button("💾 Cadastrar")
+
         if submit:
-            dados = (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento, observacao)
-            try:
-                db.adicionar_postagem(dados)
-                st.success("✅ Postagem cadastrada com sucesso!")
-            except Exception as e:
-                st.error(f"Erro ao cadastrar: {e}")
+            erros = []
+            if not posto:
+                erros.append("Posto é obrigatório.")
+            if not remetente:
+                erros.append("Remetente é obrigatório.")
+            if not codigo:
+                erros.append("Código de rastreamento é obrigatório.")
+            if len(codigo) != 13:
+                erros.append("Código de rastreamento deve ter exatamente 13 caracteres.")
+            if not tipo:
+                erros.append("Tipo é obrigatório.")
+            if valor <= 0:
+                erros.append("Valor deve ser maior que zero.")
+            if not forma_pagamento:
+                erros.append("Forma de pagamento é obrigatória.")
+            if not status_pagamento:
+                erros.append("Status de pagamento é obrigatório.")
+            if not funcionario:
+                erros.append("Funcionário é obrigatório.")
+
+            if erros:
+                for erro in erros:
+                    st.error(erro)
+            elif db.codigo_existe(codigo):
+                st.error("Código de rastreamento já cadastrado no sistema.")
+            else:
+                dados = (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
+                         funcionario, data_postagem, data_pagamento, observacao)
+                try:
+                    db.adicionar_postagem(dados)
+                    st.success("✅ Postagem cadastrada com sucesso!")
+                except Exception as e:
+                    st.error(f"Erro ao cadastrar: {e}")
 
 elif opcao == "Listar Postagens":
     st.header("📋 Lista de Postagens")
