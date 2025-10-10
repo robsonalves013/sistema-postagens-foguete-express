@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import time
 
 import db
 from dashboard import mostrar_dashboard
@@ -10,10 +11,30 @@ from utils import gerar_pdf, gerar_relatorio_mensal, gerar_pdf_guia_visual
 def get_brasilia_now():
     return datetime.now(ZoneInfo("America/Sao_Paulo"))
 
+# Define tempo de inatividade (5 minutos)
+TEMPO_INATIVIDADE = 5 * 60
+
+# Inicializa tabelas
 db.criar_tabelas()
 
+# Configuração da página
 st.set_page_config(page_title="Sistema de Postagens - Foguete Express", layout="wide")
 
+# Controle de timeout por inatividade
+if "ultimo_acesso" not in st.session_state:
+    st.session_state["ultimo_acesso"] = time.time()
+
+tempo_agora = time.time()
+if st.session_state.get("logado") and (tempo_agora - st.session_state["ultimo_acesso"] > TEMPO_INATIVIDADE):
+    st.session_state["logado"] = False
+    st.session_state["usuario"] = None
+    st.warning("⚠️ Sua sessão expirou por inatividade. Por favor, faça login novamente.")
+    st.experimental_rerun()
+
+if st.session_state.get("logado"):
+    st.session_state["ultimo_acesso"] = tempo_agora
+
+# Sessão inicial e login
 if "logado" not in st.session_state:
     st.session_state["logado"] = False
 if "usuario" not in st.session_state:
@@ -36,6 +57,7 @@ if not st.session_state["logado"]:
                 st.error("❌ Usuário ou senha incorretos.")
     st.stop()
 
+# Usuário logado
 usuario = st.session_state["usuario"]
 admin = bool(usuario.get("is_admin", 0))
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
@@ -161,10 +183,10 @@ elif opcao == "Pagamentos Pendentes":
 elif opcao == "Fechamento Diário":
     st.header("🧾 Fechamento Diário")
     postagens = db.listar_postagens()
-    bytes_pdf, nome_pdf = gerar_pdf(postagens)
-    if not bytes_pdf:
+    if not postagens:
         st.info("Nenhuma postagem para gerar PDF.")
     else:
+        bytes_pdf, nome_pdf = gerar_pdf(postagens)
         st.download_button("📥 Baixar Fechamento Diário (PDF)", data=bytes_pdf, file_name=nome_pdf, mime="application/pdf")
 
 elif opcao == "Guia":
@@ -172,8 +194,6 @@ elif opcao == "Guia":
     bytes_pdf, nome_pdf = gerar_pdf_guia_visual()
     st.download_button("📥 Baixar Guia de Utilização", data=bytes_pdf, file_name=nome_pdf, mime="application/pdf")
 
-
-# GERENCIAR USUÁRIOS
 elif opcao == "Gerenciar Usuários" and admin:
     st.header("👥 Gerenciar Usuários")
     st.subheader("Cadastrar Novo Usuário")
@@ -218,7 +238,6 @@ elif opcao == "Gerenciar Usuários" and admin:
                         except Exception as e:
                             st.error(f"Erro ao excluir usuário: {e}")
 
-# RELATÓRIO MENSAL
 elif opcao == "Relatório Mensal" and admin:
     st.header("📊 Relatório Mensal")
     col1, col2 = st.columns(2)
@@ -234,12 +253,11 @@ elif opcao == "Relatório Mensal" and admin:
     filtro_forma = None if forma == "Todos" else forma
     if st.button("Gerar Relatório"):
         postagens = db.listar_postagens_mensal(mes, ano, filtro_posto, filtro_tipo, filtro_forma)
-        bytes_pdf, nome_pdf = gerar_relatorio_mensal(postagens)
-        postagens = db.listar_postagens()  # Ou a função que pega as postagens do mês filtradas
         if not postagens:
             st.info("❗ Não há postagens para gerar o relatório mensal.")
         else:
             bytes_pdf, nome_pdf = gerar_relatorio_mensal(postagens)
             st.download_button("📥 Baixar Relatório Mensal (PDF)", data=bytes_pdf, file_name=nome_pdf, mime="application/pdf")
+
 st.markdown("---")
 st.caption("Sistema de Postagens - Foguete Express 🚀 desenvolvido por RobTech Service")
