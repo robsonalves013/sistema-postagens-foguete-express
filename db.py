@@ -14,6 +14,10 @@ def criar_tabelas():
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("""
+            ALTER TABLE postagens ADD COLUMN IF NOT EXISTS observacao TEXT;
+        """)
+        conn.commit()
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS usuarios (
                     id SERIAL PRIMARY KEY,
                     nome TEXT NOT NULL,
