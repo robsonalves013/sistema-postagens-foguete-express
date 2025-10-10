@@ -47,7 +47,7 @@ def adicionar_postagem(dados):
             cur.execute("""
                 INSERT INTO postagens
                 (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
-                funcionario, data_postagem, data_pagamento, observacao)
+                 funcionario, data_postagem, data_pagamento, observacao)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento,
                   funcionario, data_postagem, data_pagamento, observacao))
@@ -133,69 +133,16 @@ def resetar_senha(usuario, nova_senha):
             cur.execute("UPDATE usuarios SET senha=%s WHERE usuario=%s", (nova_hash, usuario))
         conn.commit()
 
-# ------------------- Postagens -------------------
-
 def codigo_existe(codigo):
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT id FROM postagens WHERE codigo = %s", (codigo,))
             return cur.fetchone() is not None
 
-def adicionar_postagem(dados):
-    posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento = dados
-    if codigo_existe(codigo):
-        raise ValueError("Código de rastreio já cadastrado.")
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO postagens
-                (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (posto, remetente, codigo, tipo, valor, forma_pagamento, status_pagamento, funcionario, data_postagem, data_pagamento))
-        conn.commit()
-
-def editar_postagem(id_postagem, novos_dados):
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                UPDATE postagens
-                SET posto=%s, remetente=%s, codigo=%s, tipo=%s, valor=%s,
-                    forma_pagamento=%s, status_pagamento=%s, funcionario=%s,
-                    data_postagem=%s, data_pagamento=%s
-                WHERE id=%s
-            """, (*novos_dados, id_postagem))
-        conn.commit()
-
 def excluir_postagem(postagem_id):
     with conectar() as conn:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM postagens WHERE id=%s", (postagem_id,))
-        conn.commit()
-
-def listar_postagens():
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM postagens ORDER BY id DESC")
-            return cur.fetchall()
-
-def listar_postagens_pendentes():
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT * FROM postagens
-                WHERE status_pagamento = 'Pendente'
-                ORDER BY id DESC
-            """)
-            return cur.fetchall()
-
-def atualizar_pagamento(postagem_id, status, data_pagamento):
-    with conectar() as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                UPDATE postagens
-                SET status_pagamento=%s, data_pagamento=%s
-                WHERE id=%s
-            """, (status, data_pagamento, postagem_id))
         conn.commit()
 
 def listar_postagens_mensal(mes, ano, filtro_posto=None, filtro_tipo=None, filtro_forma=None):
