@@ -140,7 +140,7 @@ elif opcao == "Listar Postagens":
     else:
         import pandas as pd
         df = pd.DataFrame(postagens)
-        df["data_postagem"] = pd.to_datetime(df["data_postagem"], dayfirst=True, errors="coerce")
+        df['data_postagem'] = pd.to_datetime(df['data_postagem'], dayfirst=True, errors='coerce')
         df["ano"] = df["data_postagem"].dt.year
         df["mes"] = df["data_postagem"].dt.strftime("%m/%Y")
 
@@ -152,7 +152,8 @@ elif opcao == "Listar Postagens":
                     if expand_mes:
                         grupo_mes = grupo_ano[grupo_ano["mes"] == mes]
                         for _, p in grupo_mes.iterrows():
-                            with st.expander(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}"):
+                            expand_post = st.checkbox(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}", key=f"post_{p['id']}")
+                            if expand_post:
                                 st.write(f"**Posto:** {p['posto']}")
                                 st.write(f"**Remetente:** {p['remetente']}")
                                 st.write(f"**Código:** {p['codigo']}")
