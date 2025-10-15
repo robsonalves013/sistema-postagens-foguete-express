@@ -57,7 +57,7 @@ admin = bool(usuario.get("is_admin", 0))
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
 opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Lista de Remetentes", "Pagamentos Pendentes", "Fechamento Diário", "Guia"]
 if admin:
-    opcoes += ["Gerenciar Usuários", "Relatório Mensal"]
+    opcoes += ["Dashboard", "Gerenciar Usuários", "Relatório Mensal"]
 opcao = st.sidebar.radio("Navegação", opcoes)
 
 if st.sidebar.button("🚪 Sair"):
