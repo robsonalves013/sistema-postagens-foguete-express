@@ -11,7 +11,7 @@ from utils import gerar_pdf, gerar_relatorio_mensal, gerar_pdf_guia_visual
 def get_brasilia_now():
     return datetime.now(ZoneInfo("America/Sao_Paulo"))
 
-TEMPO_INATIVIDADE = 5 * 60
+TEMPO_INATIVIDADE = 30 * 60
 
 db.criar_tabelas()
 
