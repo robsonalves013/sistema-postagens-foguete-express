@@ -71,15 +71,15 @@ def mostrar_dashboard():
     ], use_container_width=True)
     st.markdown(f"Total de postagens no período: **{len(dff)}**")
     st.markdown(f"Valor total no período: **R$ {dff['valor'].sum():,.2f}**")
-    st.markdown(f"Postagens pendentes: **{len(dff[dff['status_pagamento'] == 'Pendente'])}**")
+    st.markdown(f"Postagens com Pagamento Pendente: **{len(dff[dff['status_pagamento'] == 'Pendente'])}**")
     st.markdown(f"Valor pendente: **R$ {dff[dff['status_pagamento'] == 'Pendente']['valor'].sum():,.2f}**")
     st.markdown(f"Postagens pagas: **{len(dff[dff['status_pagamento'] == 'Pago'])}**")
     st.markdown(f"Valor pago: **R$ {dff[dff['status_pagamento'] == 'Pago']['valor'].sum():,.2f}**")
     st.markdown("---")
-    st.subheader("Postagens Pendentes")
+    st.subheader("Postagens com Pagamento Pendente")
     pendentes = dff[dff["status_pagamento"] == "Pendente"].to_dict(orient="records")
     if not pendentes:
-        st.info("Nenhum pagamento pendente.")
+        st.info("Nenhuma  Postagem com Pagamento Pendente.")
     else:
         for p in pendentes:
             with st.expander(f"📦 {p['codigo']} | {p['posto']} | R$ {p['valor']:.2f} | {p['data_postagem']}"):
