@@ -235,16 +235,32 @@ elif opcao == "Pagamentos Pendentes":
     if not pendentes:
         st.info("Nenhum pagamento pendente.")
     else:
-        for p in pendentes:
-            with st.expander(f"📦 {p['codigo']} | {p['posto']} | R$ {p['valor']:.2f} | {p['data_postagem']}"):
-                st.write(f"Remetente: {p['remetente']}")
-                st.write(f"Funcionário: {p['funcionario']}")
-                st.write(f"Data Postagem: {p['data_postagem']}")
-                st.write(f"Observação: {p.get('observacao', '')}")
-                if st.button("✅ Marcar como Pago", key=f"pago_{p['id']}"):
-                    data_atual = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
-                    db.atualizar_pagamento(p['id'], "Pago", data_atual)
-                    st.success("Pagamento marcado como Pago.")
+        import pandas as pd
+        df = pd.DataFrame(pendentes)
+        df["data_postagem"] = pd.to_datetime(df["data_postagem"], dayfirst=True, errors="coerce")
+        df["ano"] = df["data_postagem"].dt.year
+        df["mes"] = df["data_postagem"].dt.strftime("%m/%Y")
+
+        for ano, grupo_ano in df.groupby("ano"):
+            with st.expander(f"📅 Ano: {ano}"):
+                meses = sorted(grupo_ano["mes"].unique())
+                for mes in meses:
+                    expand_mes = st.checkbox(f"📅 Mês: {mes} - {len(grupo_ano[grupo_ano['mes'] == mes])} postagens", key=f"pend_mes_{ano}_{mes}")
+                    if expand_mes:
+                        grupo_mes = grupo_ano[grupo_ano["mes"] == mes]
+                        for _, p in grupo_mes.iterrows():
+                            expand_post = st.checkbox(f"📦 {p['codigo']} | {p['posto']} | R$ {p['valor']:.2f} | {p['data_postagem'].strftime('%d/%m/%Y') if pd.notnull(p['data_postagem']) else ''}", key=f"pend_post_{p['id']}")
+                            if expand_post:
+                                st.write(f"Remetente: {p['remetente']}")
+                                st.write(f"Funcionário: {p['funcionario']}")
+                                st.write(f"Data Postagem: {p['data_postagem'].strftime('%d/%m/%Y %H:%M:%S') if pd.notnull(p['data_postagem']) else ''}")
+                                st.write(f"Observação: {p.get('observacao', '')}")
+                                if st.button("✅ Marcar como Pago", key=f"pago_{p['id']}"):
+                                    data_atual = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
+                                    db.atualizar_pagamento(p['id'], "Pago", data_atual)
+                                    st.success("Pagamento marcado como Pago.")
+                                    st.experimental_rerun()
+
 
 elif opcao == "Fechamento Diário":
     st.header("🧾 Fechamento Diário")
