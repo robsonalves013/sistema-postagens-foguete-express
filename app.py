@@ -55,9 +55,9 @@ if not st.session_state["logado"]:
 usuario = st.session_state["usuario"]
 admin = bool(usuario.get("is_admin", 0))
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
-opcoes = ["Cadastrar Postagem", "Listar Postagens", "Lista de Remetentes", "Pagamentos Pendentes", "Fechamento Diário", "Guia"]
+opcoes = ["Cadastrar Postagem", "Listar Postagens", "Lista de Remetentes", "Pagamentos Pendentes", "Guia"]
 if admin:
-    opcoes += ["Dashboard", "Gerenciar Usuários", "Relatório Mensal"]
+    opcoes += ["Dashboard", "Gerenciar Usuários", "Relatório Mensal", "Fechamento Diário"]
 opcao = st.sidebar.radio("Navegação", opcoes)
 
 if st.sidebar.button("🚪 Sair"):
