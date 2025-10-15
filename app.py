@@ -209,6 +209,7 @@ elif opcao == "Listar Postagens":
                                 else:
                                     st.caption("🔒 Somente administradores podem editar/excluir postagens.")
 
+
 elif opcao == "Lista de Remetentes":
     st.header("📬 Lista de Remetentes")
     with st.form("form_remetente"):
