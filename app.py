@@ -146,7 +146,8 @@ elif opcao == "Listar Postagens":
         for ano, grupo_ano in df.groupby("ano"):
             with st.expander(f"📅 Ano: {ano}"):
                 for mes, grupo_mes in grupo_ano.groupby("mes"):
-                    with st.expander(f"📅 Mês: {mes} - {len(grupo_mes)} postagens"):
+                    expand_mes = st.checkbox(f"📅 Mês: {mes} - {len(grupo_mes)} postagens", key=f"mes_{ano}_{mes}")
+                    if expand_mes:
                         for _, p in grupo_mes.iterrows():
                             with st.expander(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}"):
                                 st.write(f"**Posto:** {p['posto']}")
@@ -161,6 +162,7 @@ elif opcao == "Listar Postagens":
                                 st.write(f"**Data Pagamento:** {p['data_pagamento'] or ''}")
                                 st.write(f"**Observação:** {p.get('observacao', '')}")
 
+                                # Funções admin para edição e exclusão
                                 if admin:
                                     st.divider()
                                     st.subheader("✏️ Editar Postagem")
@@ -203,6 +205,7 @@ elif opcao == "Listar Postagens":
                                             st.error(f"Erro ao excluir: {e}")
                                 else:
                                     st.caption("🔒 Somente administradores podem editar/excluir postagens.")
+
 
 elif opcao == "Lista de Remetentes":
     st.header("📬 Lista de Remetentes")
