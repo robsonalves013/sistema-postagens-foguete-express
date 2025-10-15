@@ -55,7 +55,7 @@ if not st.session_state["logado"]:
 usuario = st.session_state["usuario"]
 admin = bool(usuario.get("is_admin", 0))
 st.sidebar.title(f"👋 Olá, {usuario['nome']}")
-opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Pagamentos Pendentes", "Fechamento Diário", "Guia"]
+opcoes = ["Dashboard", "Cadastrar Postagem", "Listar Postagens", "Lista de Remetentes", "Pagamentos Pendentes", "Fechamento Diário", "Guia"]
 if admin:
     opcoes += ["Gerenciar Usuários", "Relatório Mensal"]
 opcao = st.sidebar.radio("Navegação", opcoes)
@@ -71,9 +71,16 @@ if opcao == "Dashboard":
 
 elif opcao == "Cadastrar Postagem":
     st.header("📝 Cadastrar Nova Postagem")
+
+    # Busca remetentes cadastrados
+    remetentes_cadastrados = [r["nome"] for r in db.listar_remetentes()]
+    if not remetentes_cadastrados:
+        st.warning("⚠️ Cadastre pelo menos um remetente antes de cadastrar postagens.")
+        st.stop()
+
     with st.form("form_postagem"):
         posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"])
-        remetente = st.text_input("Remetente")
+        remetente = st.selectbox("Remetente", remetentes_cadastrados)
         codigo = st.text_input("Código de Rastreamento")
         tipo = st.selectbox("Tipo", ["PAC", "SEDEX"])
         valor = st.number_input("Valor (R$)", min_value=0.0, step=0.01)
@@ -187,6 +194,25 @@ elif opcao == "Listar Postagens":
                 else:
                     st.caption("🔒 Somente administradores podem editar/excluir postagens.")
 
+elif opcao == "Lista de Remetentes":
+    st.header("📬 Lista de Remetentes")
+    with st.form("form_remetente"):
+        novo_remetente = st.text_input("Nome do remetente")
+        cadastrar = st.form_submit_button("Cadastrar")
+        if cadastrar and novo_remetente:
+            db.cadastrar_remetente(novo_remetente.strip())
+            st.success("Remetente cadastrado com sucesso!")
+    remetentes = db.listar_remetentes()
+    if not remetentes:
+        st.info("Nenhum remetente cadastrado.")
+    else:
+        df_remet = pd.DataFrame(remetentes)
+        st.dataframe(df_remet, use_container_width=True)
+        for r in remetentes:
+            if st.button(f"🗑️ Excluir {r['nome']}", key=f"exc_rem_{r['id']}"):
+                db.excluir_remetente(r['id'])
+                st.experimental_rerun()
+
 elif opcao == "Pagamentos Pendentes":
     st.header("💰 Pagamentos Pendentes")
     pendentes = db.listar_postagens_pendentes()
@@ -194,7 +220,7 @@ elif opcao == "Pagamentos Pendentes":
         st.info("Nenhum pagamento pendente.")
     else:
         for p in pendentes:
-            with st.expander(f"📦 {p['codigo']} | {p['posto']} | R$ {p['valor']:.2f}"):
+            with st.expander(f"📦 {p['codigo']} | {p['posto']} | R$ {p['valor']:.2f} | {p['data_postagem']}"):
                 st.write(f"Remetente: {p['remetente']}")
                 st.write(f"Funcionário: {p['funcionario']}")
                 st.write(f"Data Postagem: {p['data_postagem']}")

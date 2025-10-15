@@ -39,6 +39,12 @@ def criar_tabelas():
                     observacao TEXT
                 )
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS remetentes (
+                    id SERIAL PRIMARY KEY,
+                    nome TEXT UNIQUE NOT NULL
+                )
+            """)
             # Garante que campo observacao exista
             cur.execute("""
                 ALTER TABLE postagens ADD COLUMN IF NOT EXISTS observacao TEXT;
@@ -175,3 +181,21 @@ def listar_postagens_mensal(mes, ano, filtro_posto=None, filtro_tipo=None, filtr
             query += " ORDER BY id DESC"
             cur.execute(query, params)
             return cur.fetchall()
+        
+def cadastrar_remetente(nome):
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO remetentes (nome) VALUES (%s) ON CONFLICT DO NOTHING;", (nome,))
+        conn.commit()
+
+def listar_remetentes():
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, nome FROM remetentes ORDER BY nome")
+            return cur.fetchall()
+
+def excluir_remetente(remetente_id):
+    with conectar() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM remetentes WHERE id=%s", (remetente_id,))
+        conn.commit()
