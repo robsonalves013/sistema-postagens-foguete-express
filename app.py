@@ -138,6 +138,7 @@ elif opcao == "Listar Postagens":
     if not postagens:
         st.info("Nenhuma postagem cadastrada.")
     else:
+        import pandas as pd
         df = pd.DataFrame(postagens)
         df["data_postagem"] = pd.to_datetime(df["data_postagem"], dayfirst=True, errors="coerce")
         df["ano"] = df["data_postagem"].dt.year
@@ -145,9 +146,11 @@ elif opcao == "Listar Postagens":
 
         for ano, grupo_ano in df.groupby("ano"):
             with st.expander(f"📅 Ano: {ano}"):
-                for mes, grupo_mes in grupo_ano.groupby("mes"):
-                    expand_mes = st.checkbox(f"📅 Mês: {mes} - {len(grupo_mes)} postagens", key=f"mes_{ano}_{mes}")
+                meses = sorted(grupo_ano["mes"].unique())
+                for mes in meses:
+                    expand_mes = st.checkbox(f"📅 Mês: {mes} - {len(grupo_ano[grupo_ano['mes'] == mes])} postagens", key=f"{ano}_{mes}")
                     if expand_mes:
+                        grupo_mes = grupo_ano[grupo_ano["mes"] == mes]
                         for _, p in grupo_mes.iterrows():
                             with st.expander(f"📦 {p['codigo']} | {p['posto']} | {p['remetente']}"):
                                 st.write(f"**Posto:** {p['posto']}")
@@ -162,7 +165,6 @@ elif opcao == "Listar Postagens":
                                 st.write(f"**Data Pagamento:** {p['data_pagamento'] or ''}")
                                 st.write(f"**Observação:** {p.get('observacao', '')}")
 
-                                # Funções admin para edição e exclusão
                                 if admin:
                                     st.divider()
                                     st.subheader("✏️ Editar Postagem")
@@ -205,7 +207,6 @@ elif opcao == "Listar Postagens":
                                             st.error(f"Erro ao excluir: {e}")
                                 else:
                                     st.caption("🔒 Somente administradores podem editar/excluir postagens.")
-
 
 elif opcao == "Lista de Remetentes":
     st.header("📬 Lista de Remetentes")
