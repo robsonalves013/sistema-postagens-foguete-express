@@ -139,6 +139,14 @@ elif opcao == "Listar Postagens":
         st.info("Nenhuma postagem cadastrada.")
     else:
         import pandas as pd
+
+        # Filtro por código de rastreamento
+        codigo_filtro = st.text_input("Filtrar por código de rastreamento (opcional)")
+        if codigo_filtro:
+            postagens = [p for p in postagens if codigo_filtro.lower() in p['codigo'].lower()]
+            if not postagens:
+                st.warning("Nenhuma postagem encontrada com esse código.")
+
         df = pd.DataFrame(postagens)
         df['data_postagem'] = pd.to_datetime(df['data_postagem'], dayfirst=True, errors='coerce')
         df["ano"] = df["data_postagem"].dt.year
@@ -169,45 +177,48 @@ elif opcao == "Listar Postagens":
                                 if admin:
                                     st.divider()
                                     st.subheader("✏️ Editar Postagem")
-                                    with st.form(f"editar_{p['id']}"):
-                                        novo_posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"],
-                                                                 index=["Shopping Bolivia", "Hotel Family"].index(p['posto']) if p['posto'] in ["Shopping Bolivia", "Hotel Family"] else 0)
-                                        novo_remetente = st.text_input("Remetente", p['remetente'])
-                                        novo_codigo = st.text_input("Código", p['codigo'])
-                                        novo_tipo = st.selectbox("Tipo", ["PAC", "SEDEX"],
-                                                                 index=["PAC", "SEDEX"].index(p['tipo']) if p['tipo'] in ["PAC", "SEDEX"] else 0)
-                                        novo_valor = st.number_input("Valor (R$)", value=float(p['valor']))
-                                        nova_forma = st.selectbox("Forma Pagamento", ["PIX", "Dinheiro", "Cartão"],
-                                                                  index=["PIX", "Dinheiro", "Cartão"].index(p['forma_pagamento']) if p['forma_pagamento'] in ["PIX", "Dinheiro", "Cartão"] else 0)
-                                        novo_status = st.selectbox("Status", ["Pendente", "Pago"],
-                                                                  index=["Pendente", "Pago"].index(p['status_pagamento']) if p['status_pagamento'] in ["Pendente", "Pago"] else 0)
-                                        novo_func = st.selectbox("Funcionário", ["Yuri", "Jair"],
-                                                                index=["Yuri", "Jair"].index(p['funcionario']) if p['funcionario'] in ["Yuri", "Jair"] else 0)
-                                        nova_observacao = st.text_area("Observação", p.get('observacao', ''))
-                                        if novo_status == "Pago":
-                                            nova_data_pag = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
-                                        else:
-                                            nova_data_pag = ""
-                                        salvar = st.form_submit_button("💾 Salvar Alterações")
-                                        if salvar:
-                                            novos_dados = (
-                                                novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
-                                                nova_forma, novo_status, novo_func,
-                                                p['data_postagem'], nova_data_pag, nova_observacao
-                                            )
-                                            try:
-                                                db.editar_postagem(p["id"], novos_dados)
-                                                st.success("✅ Postagem atualizada com sucesso!")
-                                            except Exception as e:
-                                                st.error(f"Erro ao atualizar: {e}")
+                                    # Corrigido: posto só aceita opções válidas
+                                    novo_posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"],
+                                        index=["Shopping Bolivia", "Hotel Family"].index(p['posto']) if p['posto'] in ["Shopping Bolivia", "Hotel Family"] else 0)
+                                    novo_remetente = st.text_input("Remetente", p['remetente'])
+                                    novo_codigo = st.text_input("Código", p['codigo'])
+                                    novo_tipo = st.selectbox("Tipo", ["PAC", "SEDEX"],
+                                        index=["PAC", "SEDEX"].index(p['tipo']) if p['tipo'] in ["PAC", "SEDEX"] else 0)
+                                    novo_valor = st.number_input("Valor (R$)", value=float(p['valor']))
+                                    nova_forma = st.selectbox("Forma Pagamento", ["PIX", "Dinheiro", "Cartão"],
+                                        index=["PIX", "Dinheiro", "Cartão"].index(p['forma_pagamento']) if p['forma_pagamento'] in ["PIX", "Dinheiro", "Cartão"] else 0)
+                                    novo_status = st.selectbox("Status", ["Pendente", "Pago"],
+                                        index=["Pendente", "Pago"].index(p['status_pagamento']) if p['status_pagamento'] in ["Pendente", "Pago"] else 0)
+                                    novo_func = st.selectbox("Funcionário", ["Yuri", "Jair"],
+                                        index=["Yuri", "Jair"].index(p['funcionario']) if p['funcionario'] in ["Yuri", "Jair"] else 0)
+                                    nova_observacao = st.text_area("Observação", p.get('observacao', ''))
+                                    if novo_status == "Pago":
+                                        nova_data_pag = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
+                                    else:
+                                        nova_data_pag = ""
+                                    salvar = st.form_submit_button("💾 Salvar Alterações")
+                                    if salvar:
+                                        novos_dados = (
+                                            novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
+                                            nova_forma, novo_status, novo_func,
+                                            p['data_postagem'], nova_data_pag, nova_observacao
+                                        )
+                                        try:
+                                            db.editar_postagem(p["id"], novos_dados)
+                                            st.success("✅ Postagem atualizada com sucesso!")
+                                            st.experimental_rerun()
+                                        except Exception as e:
+                                            st.error(f"Erro ao atualizar: {e}")
                                     if st.button("🗑️ Excluir Postagem", key=f"excluir_{p['id']}"):
                                         try:
                                             db.excluir_postagem(p['id'])
                                             st.success("Postagem excluída.")
+                                            st.experimental_rerun()
                                         except Exception as e:
                                             st.error(f"Erro ao excluir: {e}")
                                 else:
                                     st.caption("🔒 Somente administradores podem editar/excluir postagens.")
+
 
 
 elif opcao == "Lista de Remetentes":
