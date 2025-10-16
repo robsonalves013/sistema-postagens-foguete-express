@@ -135,12 +135,24 @@ elif opcao == "Cadastrar Postagem":
 elif opcao == "Listar Postagens":
     st.header("📋 Lista de Postagens")
     postagens = db.listar_postagens()
+
     if not postagens:
         st.info("Nenhuma postagem cadastrada.")
     else:
         import pandas as pd
         df = pd.DataFrame(postagens)
-        df['data_postagem'] = pd.to_datetime(df['data_postagem'], dayfirst=True, errors='coerce')
+
+        # Converte datas, inferindo formato para aceitar formatos diferentes (ex: d/m/Y e Y-m-d)
+        df['data_postagem'] = pd.to_datetime(
+            df['data_postagem'],
+            dayfirst=True,
+            errors='coerce',
+            infer_datetime_format=True
+        )
+
+        # Remove registros sem data válida
+        df = df.dropna(subset=['data_postagem'])
+
         df["ano"] = df["data_postagem"].dt.year
         df["mes"] = df["data_postagem"].dt.strftime("%m/%Y")
 
@@ -162,7 +174,7 @@ elif opcao == "Listar Postagens":
                                 st.write(f"**Forma Pagamento:** {p['forma_pagamento']}")
                                 st.write(f"**Status:** {p['status_pagamento']}")
                                 st.write(f"**Funcionário:** {p['funcionario']}")
-                                st.write(f"**Data Postagem:** {p['data_postagem'].strftime('%d/%m/%Y %H:%M:%S') if pd.notnull(p['data_postagem']) else ''}")
+                                st.write(f"**Data Postagem:** {p['data_postagem'].strftime('%d/%m/%Y %H:%M:%S')}")
                                 st.write(f"**Data Pagamento:** {p['data_pagamento'] or ''}")
                                 st.write(f"**Observação:** {p.get('observacao', '')}")
 
@@ -171,18 +183,18 @@ elif opcao == "Listar Postagens":
                                     st.subheader("✏️ Editar Postagem")
                                     with st.form(f"editar_{p['id']}"):
                                         novo_posto = st.selectbox("Posto", ["Shopping Bolivia", "Hotel Family"],
-                                                                 index=["Shopping Bolivia", "Hotel Family"].index(p['posto']) if p['posto'] in ["Shopping Bolivia", "Hotel Family"] else 0)
+                                            index=["Shopping Bolivia", "Hotel Family"].index(p['posto']) if p['posto'] in ["Shopping Bolivia", "Hotel Family"] else 0)
                                         novo_remetente = st.text_input("Remetente", p['remetente'])
                                         novo_codigo = st.text_input("Código", p['codigo'])
                                         novo_tipo = st.selectbox("Tipo", ["PAC", "SEDEX"],
-                                                                 index=["PAC", "SEDEX"].index(p['tipo']) if p['tipo'] in ["PAC", "SEDEX"] else 0)
+                                            index=["PAC", "SEDEX"].index(p['tipo']) if p['tipo'] in ["PAC", "SEDEX"] else 0)
                                         novo_valor = st.number_input("Valor (R$)", value=float(p['valor']))
                                         nova_forma = st.selectbox("Forma Pagamento", ["PIX", "Dinheiro", "Cartão"],
-                                                                  index=["PIX", "Dinheiro", "Cartão"].index(p['forma_pagamento']) if p['forma_pagamento'] in ["PIX", "Dinheiro", "Cartão"] else 0)
+                                            index=["PIX", "Dinheiro", "Cartão"].index(p['forma_pagamento']) if p['forma_pagamento'] in ["PIX", "Dinheiro", "Cartão"] else 0)
                                         novo_status = st.selectbox("Status", ["Pendente", "Pago"],
-                                                                  index=["Pendente", "Pago"].index(p['status_pagamento']) if p['status_pagamento'] in ["Pendente", "Pago"] else 0)
+                                            index=["Pendente", "Pago"].index(p['status_pagamento']) if p['status_pagamento'] in ["Pendente", "Pago"] else 0)
                                         novo_func = st.selectbox("Funcionário", ["Yuri", "Jair"],
-                                                                index=["Yuri", "Jair"].index(p['funcionario']) if p['funcionario'] in ["Yuri", "Jair"] else 0)
+                                            index=["Yuri", "Jair"].index(p['funcionario']) if p['funcionario'] in ["Yuri", "Jair"] else 0)
                                         nova_observacao = st.text_area("Observação", p.get('observacao', ''))
                                         if novo_status == "Pago":
                                             nova_data_pag = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
@@ -193,21 +205,25 @@ elif opcao == "Listar Postagens":
                                             novos_dados = (
                                                 novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
                                                 nova_forma, novo_status, novo_func,
-                                                p['data_postagem'], nova_data_pag, nova_observacao
+                                                p['data_postagem'].strftime("%d/%m/%Y %H:%M:%S"), nova_data_pag, nova_observacao
                                             )
                                             try:
                                                 db.editar_postagem(p["id"], novos_dados)
                                                 st.success("✅ Postagem atualizada com sucesso!")
+                                                st.experimental_rerun()
                                             except Exception as e:
                                                 st.error(f"Erro ao atualizar: {e}")
+
                                     if st.button("🗑️ Excluir Postagem", key=f"excluir_{p['id']}"):
                                         try:
                                             db.excluir_postagem(p['id'])
                                             st.success("Postagem excluída.")
+                                            st.experimental_rerun()
                                         except Exception as e:
                                             st.error(f"Erro ao excluir: {e}")
                                 else:
                                     st.caption("🔒 Somente administradores podem editar/excluir postagens.")
+
 
 
 elif opcao == "Lista de Remetentes":

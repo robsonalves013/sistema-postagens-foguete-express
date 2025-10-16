@@ -1,4 +1,4 @@
-from fpdf import FPDF
+Pofrom fpdf import FPDF
 from io import BytesIO
 
 class GuiaVisual(FPDF):
