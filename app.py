@@ -196,7 +196,7 @@ elif opcao == "Listar Postagens":
                                         nova_data_pag = get_brasilia_now().strftime("%d/%m/%Y %H:%M:%S")
                                     else:
                                         nova_data_pag = ""
-                                    salvar = st.form_submit_button("💾 Salvar Alterações")
+                                    salvar = st.button("💾 Salvar Alterações", key=f"salvar_{p['id']}")
                                     if salvar:
                                         novos_dados = (
                                             novo_posto, novo_remetente, novo_codigo, novo_tipo, novo_valor,
@@ -207,6 +207,7 @@ elif opcao == "Listar Postagens":
                                             db.editar_postagem(p["id"], novos_dados)
                                             st.success("✅ Postagem atualizada com sucesso!")
                                             st.experimental_rerun()
+                                            salvar = st.form_submit_button("💾 Salvar Alterações")
                                         except Exception as e:
                                             st.error(f"Erro ao atualizar: {e}")
                                     if st.button("🗑️ Excluir Postagem", key=f"excluir_{p['id']}"):
@@ -218,7 +219,6 @@ elif opcao == "Listar Postagens":
                                             st.error(f"Erro ao excluir: {e}")
                                 else:
                                     st.caption("🔒 Somente administradores podem editar/excluir postagens.")
-
 
 
 elif opcao == "Lista de Remetentes":
