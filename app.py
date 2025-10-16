@@ -143,7 +143,7 @@ elif opcao == "Listar Postagens":
         # Filtro por código de rastreamento
         codigo_filtro = st.text_input("Filtrar por código de rastreamento (opcional)")
         if codigo_filtro:
-            postagens = [p for p in postagens if codigo_filtro.lower() in p['codigo'].lower()]
+            postagens = [p for p in postagens if p['codigo'].lower() == codigo_filtro.lower()]
             if not postagens:
                 st.warning("Nenhuma postagem encontrada com esse código.")
 
