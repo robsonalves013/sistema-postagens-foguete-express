@@ -243,7 +243,7 @@ elif opcao == "Listar Postagens":
                                                 st.experimental_rerun()
                                             except Exception as e:
                                                 st.error(f"Erro ao atualizar: {e}")
-
+                                    # Botão de excluir fora do form
                                         if st.button("🗑️ Excluir Postagem", key=f"excluir_{p['id']}"):
                                             try:
                                                 db.excluir_postagem(p['id'])
@@ -253,7 +253,6 @@ elif opcao == "Listar Postagens":
                                                 st.error(f"Erro ao excluir: {e}")
                                         else:
                                             st.caption("🔒 Somente administradores podem editar/excluir postagens.")
-
 
 elif opcao == "Lista de Remetentes":
     st.header("📬 Lista de Remetentes")
