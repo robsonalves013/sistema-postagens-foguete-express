@@ -251,8 +251,8 @@ elif opcao == "Listar Postagens":
                                                 st.experimental_rerun()
                                             except Exception as e:
                                                 st.error(f"Erro ao excluir: {e}")
-                                    else:
-                                        st.caption("🔒 Somente administradores podem editar/excluir postagens.")
+                                        else:
+                                            st.caption("🔒 Somente administradores podem editar/excluir postagens.")
 
 
 elif opcao == "Lista de Remetentes":
