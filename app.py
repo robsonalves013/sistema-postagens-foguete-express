@@ -136,8 +136,14 @@ elif opcao == "Listar Postagens":
     st.header("📋 Lista de Postagens")
     postagens = db.listar_postagens()
 
+    # Linha de pesquisa por código de rastreio
+    codigo_filtro = st.text_input("Filtrar por código de rastreamento (opcional)")
+
+    if codigo_filtro:
+        postagens = [p for p in postagens if codigo_filtro.lower() in p['codigo'].lower()]
+
     if not postagens:
-        st.info("Nenhuma postagem cadastrada.")
+        st.info("Nenhuma postagem cadastrada ou encontrada com o filtro.")
     else:
         import pandas as pd
         df = pd.DataFrame(postagens)
