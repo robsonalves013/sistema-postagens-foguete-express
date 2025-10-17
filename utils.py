@@ -13,7 +13,13 @@ def gerar_pdf(postagens):
 
     if isinstance(postagens, list):
         postagens = pd.DataFrame(postagens)
+
+    # Converte a coluna para datetime
     postagens["data_postagem"] = pd.to_datetime(postagens["data_postagem"], errors="coerce")
+
+    # Filtra somente as postagens do dia atual
+    hoje = datetime.now().date()
+    postagens = postagens[postagens["data_postagem"].dt.date == hoje]
 
     # Filtra os status Pago e Pendente
     postagens = postagens[postagens["status_pagamento"].isin(["Pago", "Pendente"])]
