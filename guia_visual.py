@@ -1,5 +1,6 @@
-Pofrom fpdf import FPDF
+from fpdf import FPDF
 from io import BytesIO
+
 
 class GuiaVisual(FPDF):
     def header(self):
@@ -27,6 +28,7 @@ class GuiaVisual(FPDF):
         y = self.get_y()
         self.line(10, y, 200, y)
         self.ln(3)
+
 
 def gerar_pdf_guia_atendente(nome_arquivo="guia_utilizacao.pdf"):
     pdf = GuiaVisual()
@@ -111,6 +113,7 @@ def gerar_pdf_guia_atendente(nome_arquivo="guia_utilizacao.pdf"):
     pdf.output(nome_arquivo)
     print(f"PDF visual de guia de utilização gerado: {nome_arquivo}")
     return nome_arquivo
+
 
 if __name__ == "__main__":
     gerar_pdf_guia_atendente()
